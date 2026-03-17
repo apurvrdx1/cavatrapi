@@ -1,0 +1,5 @@
+export * from './types.js'
+export { createInitialBoard } from './board.js'
+export { isOnBoard, knightMoves, getValidMoves, applyMove } from './moves.js'
+export { computeIslandScores } from './scoring.js'
+export { detectGameOver, getWinner } from './game.js'

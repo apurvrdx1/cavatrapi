@@ -1,0 +1,4 @@
+
+> @cavatrapi/server@0.0.0 typecheck /Users/apurvray/repos/cavatrapi/apps/server
+> tsc --noEmit
+
