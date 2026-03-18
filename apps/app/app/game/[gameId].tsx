@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, Pressable, Platform, useWindowDimensions, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { usePostHog } from 'posthog-react-native'
 import { useGameStore } from '../../stores/gameStore'
 import { useNetworkGameStore } from '../../stores/networkGameStore'
 import { useSocket } from '../../hooks/useSocket'
@@ -19,9 +20,11 @@ function LocalGameScreen({ mode, clock }: { mode: GameMode; clock: number }) {
   const { board, validMoves, turnStartedAt, clockSeconds, gameOver, initGame, makeMove, tickTimer, resign } =
     useGameStore()
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const posthog = usePostHog()
 
   useEffect(() => {
     initGame(mode, clock as 15 | 30 | 45)
+    posthog?.capture('game_started', { mode, clock_seconds: clock, game_type: 'local' })
   }, [])
 
   useEffect(() => {
@@ -30,7 +33,14 @@ function LocalGameScreen({ mode, clock }: { mode: GameMode; clock: number }) {
   }, [])
 
   useEffect(() => {
-    if (gameOver && tickRef.current) clearInterval(tickRef.current)
+    if (!gameOver) return
+    if (tickRef.current) clearInterval(tickRef.current)
+    posthog?.capture('game_ended', {
+      mode,
+      winner: gameOver.winner,
+      reason: gameOver.reason,
+      game_type: 'local',
+    })
   }, [gameOver])
 
   const cellSize = Math.floor((Math.min(width, 420) - 60) / 8)
@@ -68,7 +78,10 @@ function LocalGameScreen({ mode, clock }: { mode: GameMode; clock: number }) {
       board={board}
       validMoves={gameOver ? [] : validMoves}
       cellSize={cellSize}
-      onMove={makeMove}
+      onMove={(sq) => {
+        posthog?.capture('move_made', { mode, move_count: board.moveCount + 1, game_type: 'local' })
+        makeMove(sq)
+      }}
       onResign={handleResign}
       p1={{ name: 'Player 1', isActive: activePlayer === 'P1' && !gameOver, timeLeftMs: liveP1, clockSeconds, claimedCount: p1Claimed, isTrapped: p1Trapped }}
       p2={{ name: 'Player 2', isActive: activePlayer === 'P2' && !gameOver, timeLeftMs: liveP2, clockSeconds, claimedCount: p2Claimed, isTrapped: p2Trapped }}
@@ -89,6 +102,8 @@ function NetworkGameScreen({ gameId }: { gameId: string }) {
     board, validMoves, yourRole, clockSeconds, timeLeftMs, turnStartedAt,
     gameOver, applyServerState, setGameOver, reset,
   } = useNetworkGameStore()
+  const posthog = usePostHog()
+  const gameStartedRef = useRef(false)
 
   // Attach socket listeners for this game
   useEffect(() => {
@@ -99,12 +114,32 @@ function NetworkGameScreen({ gameId }: { gameId: string }) {
     }) {
       if (!payload.state) return
       applyServerState(payload.state, payload.validMoves, payload.timeLeftMs)
+      // Capture game_started on first state arrival
+      if (!gameStartedRef.current) {
+        gameStartedRef.current = true
+        posthog?.capture('game_started', {
+          mode: payload.state.mode,
+          clock_seconds: clockSeconds,
+          game_type: 'network',
+          your_role: yourRole,
+        })
+      }
     }
 
     function onGameOver(payload: { winner: Player | null; reason: string }) {
       type Reason = 'normal' | 'timeout' | 'resign' | 'opponent_disconnected'
       const reason = (payload.reason as Reason) ?? 'normal'
-      setGameOver({ winner: payload.winner ?? 'draw', reason })
+      const winner = (payload.winner ?? 'draw') as Player | 'draw'
+      const result = { winner, reason }
+      setGameOver(result)
+      posthog?.capture('game_ended', {
+        mode: board?.mode ?? null,
+        winner: result.winner,
+        reason: result.reason,
+        did_win: result.winner === yourRole,
+        move_count: board?.moveCount ?? null,
+        game_type: 'network',
+      })
     }
 
     socket.on(SERVER_EVENTS.GAME_STATE, onGameState)
@@ -121,6 +156,7 @@ function NetworkGameScreen({ gameId }: { gameId: string }) {
 
   const handleMove = useCallback((sq: Square) => {
     if (!board || !yourRole || board.currentTurn !== yourRole) return
+    posthog?.capture('move_made', { mode: board.mode, move_count: board.moveCount + 1, game_type: 'network' })
     socket.emit(SOCKET_EVENTS.SUBMIT_MOVE, { gameId, to: sq })
   }, [board, yourRole, gameId])
 
