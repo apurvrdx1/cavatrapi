@@ -5,7 +5,8 @@ import { applyMove, getValidMoves } from '@cavatrapi/engine'
 import type { Square } from '@cavatrapi/engine'
 import { chooseBestMove } from '@cavatrapi/ai'
 import type { AIDifficulty } from '@cavatrapi/ai'
-import { saveGameSession } from './db.js'
+import { saveGameSession, upsertPlayer } from './db.js'
+import type { VerifiedUser } from './auth.js'
 import {
   tryMatch,
   leaveQueue,
@@ -37,6 +38,10 @@ interface RequestAIMovePayload {
   gameId: string
   difficulty?: AIDifficulty
 }
+
+// ─── Auth registry ────────────────────────────────────────────────────────────
+// Maps socketId → VerifiedUser so we can look up both players at match time.
+const socketUsers = new Map<string, VerifiedUser>()
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,7 +131,15 @@ function startTurnTimer(io: Server, session: GameSession): void {
 
 // ─── Handler registration ─────────────────────────────────────────────────────
 
-export function registerSocketHandlers(io: Server, socket: Socket): void {
+export function registerSocketHandlers(io: Server, socket: Socket, user: VerifiedUser | null): void {
+  // Register this socket's verified identity (may be null for guests)
+  if (user) {
+    socketUsers.set(socket.id, user)
+    // Fire-and-forget: ensure player row exists in Supabase
+    upsertPlayer({ id: user.userId, username: user.username ?? 'Player', avatar_url: null })
+      .catch((err: unknown) => console.error('[db] upsertPlayer failed:', err))
+  }
+
   // ── JOIN_GAME ──────────────────────────────────────────────────────────────
   socket.on(SOCKET_EVENTS.JOIN_GAME, (payload: JoinGamePayload) => {
     const { mode, clockSeconds } = payload
@@ -141,6 +154,13 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     // Pair found — create session
     const session = createSession(matched.socketId, socket.id, mode, clockSeconds)
     const { gameId, socketIds } = session
+
+    // Populate playerIds if both sockets are authenticated
+    const p1User = socketUsers.get(socketIds.P1)
+    const p2User = socketUsers.get(socketIds.P2)
+    if (p1User && p2User) {
+      session.playerIds = { P1: p1User.userId, P2: p2User.userId }
+    }
 
     // Join socket rooms
     io.sockets.sockets.get(socketIds.P1)?.join(gameId)
@@ -267,6 +287,7 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
 
   // ── DISCONNECT ─────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
+    socketUsers.delete(socket.id)
     leaveQueue(socket.id)
 
     const session = getSessionBySocket(socket.id)

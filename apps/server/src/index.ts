@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { Server } from 'socket.io'
 import { registerSocketHandlers } from './socket.js'
+import { verifySocketToken } from './auth.js'
 
 const app = Fastify({ logger: true })
 
@@ -27,9 +28,13 @@ const io = new Server(app.server, {
   },
 })
 
-io.on('connection', (socket) => {
-  app.log.info(`socket connected: ${socket.id}`)
-  registerSocketHandlers(io, socket)
+io.on('connection', async (socket) => {
+  // Verify Clerk JWT — fails open (guest) if token is absent or invalid
+  const token = socket.handshake.auth['token'] as string | undefined
+  const user = await verifySocketToken(token)
+
+  app.log.info(`socket connected: ${socket.id} userId=${user?.userId ?? 'guest'}`)
+  registerSocketHandlers(io, socket, user)
 })
 
 // ─── Health ───────────────────────────────────────────────────────────────────

@@ -14,19 +14,20 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@cavatrapi/shared": "workspace:*",
-    "@cavatrapi/engine": "workspace:*",
     "@cavatrapi/ai": "workspace:*",
-    "fastify": "^5.0.0",
-    "@fastify/jwt": "^9.0.0",
+    "@cavatrapi/engine": "workspace:*",
+    "@cavatrapi/shared": "workspace:*",
+    "@clerk/backend": "^3.2.1",
     "@fastify/cors": "^10.0.0",
-    "socket.io": "^4.7.0",
-    "@supabase/supabase-js": "^2.45.0"
+    "@fastify/jwt": "^9.0.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "fastify": "^5.0.0",
+    "socket.io": "^4.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0",
     "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   }
 }
