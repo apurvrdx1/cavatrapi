@@ -1,5 +1,13 @@
+import * as Sentry from '@sentry/react-native'
 import { Stack } from 'expo-router'
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo'
+
+// ─── Sentry — error tracking only ────────────────────────────────────────────
+Sentry.init({
+  dsn: process.env['EXPO_PUBLIC_SENTRY_DSN'],
+  tracesSampleRate: 0,
+  enabled: !!process.env['EXPO_PUBLIC_SENTRY_DSN'],
+})
 import * as SecureStore from 'expo-secure-store'
 import { useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'

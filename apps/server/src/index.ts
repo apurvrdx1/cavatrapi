@@ -1,8 +1,16 @@
+import * as Sentry from '@sentry/node'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { Server } from 'socket.io'
 import { registerSocketHandlers } from './socket.js'
 import { verifySocketToken } from './auth.js'
+
+// ─── Sentry — error tracking only ────────────────────────────────────────────
+Sentry.init({
+  dsn: process.env['SENTRY_DSN'],
+  tracesSampleRate: 0,  // no performance tracing
+  enabled: !!process.env['SENTRY_DSN'],
+})
 
 const app = Fastify({ logger: true })
 
