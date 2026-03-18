@@ -1,0 +1,31 @@
+app = "cavatrapi-server"
+primary_region = "iad"
+
+[build]
+  # Run `flyctl deploy --config apps/server/fly.toml` from the monorepo root
+  # so the build context includes all packages/
+  dockerfile = "apps/server/Dockerfile"
+
+[env]
+  PORT = "3001"
+  NODE_ENV = "production"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = "stop"
+  min_machines_running = 0
+  # Long grace period — socket.io connections take time to drain
+  graceful_shutdown_timeout = "30s"
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "5m"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+    # Keep interval long so health checks don't prevent machine from sleeping
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
