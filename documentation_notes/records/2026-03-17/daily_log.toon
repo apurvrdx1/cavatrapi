@@ -119,3 +119,344 @@ tooling:
   files_touched[0]:
 tags:
   narrative_tags[3]: ai-design,decision-locked,bot-spec
+
+# ─── Entry 20260317-007 ──────────────────────────────────────────────────
+entry_id: 20260317-007
+timestamp: "2026-03-17T20:17:46.312Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: high
+status: resolved
+objective: Game screen design — top bar + P1 panel + board in Paper MCP
+interaction:
+  user_prompt: Design the Cavatrapi game screen in Paper MCP
+  assistant_response_summary: "Added top nav bar, P1 player panel (avatar, username, turn indicator, countdown timer), and 8x8 board with knights at starting positions and valid move highlights. Design system: parchment #F5F2EC, P1 blue #2B5282, P2 crimson #9B2335, fonts DM Serif Display + Space Grotesk."
+tooling:
+  tools_used[2]: mcp__paper__write_html,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: "Paper: Game Screen — Desktop"
+tags:
+  narrative_tags[3]: paper-design,game-screen,in-progress
+
+# ─── Entry 20260317-008 ──────────────────────────────────────────────────
+entry_id: 20260317-008
+timestamp: "2026-03-17T20:19:35.687Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: high
+status: resolved
+objective: Game screen design — full three-column layout complete (P1 panel + board + P2 panel)
+interaction:
+  user_prompt: Add P2 player panel to complete the game screen layout
+  assistant_response_summary: "P2 panel added: greyed avatar, opponent username, crimson color bar, WAITING state badge, and dimmed 0:45 timer. Full layout now shows P1 (active, blue) | 8x8 board | P2 (waiting, muted). Clear active vs waiting visual contrast achieved."
+tooling:
+  tools_used[2]: mcp__paper__write_html,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: "Paper: Game Screen — Desktop"
+tags:
+  narrative_tags[4]: paper-design,game-screen,milestone,layout-complete
+
+# ─── Entry 20260317-009 ──────────────────────────────────────────────────
+entry_id: 20260317-009
+timestamp: "2026-03-17T20:27:12.420Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Add save-paper.ts script and update archivist skill to properly save Paper MCP screenshots as artifacts
+interaction:
+  user_prompt: Write a script to convert Paper MCP base64 screenshot data into image files and update the archivist skill
+  assistant_response_summary: "Created save-paper.ts: reads latest output_image from session JSONL (where Paper MCP base64 is stored), decodes to JPEG, saves to artifacts dir. Fixed path derivation bug (leading dash). Updated paperSkillFragment in figma.ts and archive.md skill to document the two-step workflow: call get_screenshot → run save-paper.ts. First artifact saved: 001_game-screen-desktop_paper-screenshot.jpg (34KB)."
+tooling:
+  tools_used[3]: Write,Edit,Bash
+  mcps_used[0]:
+  files_touched[3]: src/capture/save-paper.ts,src/capture/figma.ts,skill/archive.md
+tags:
+  narrative_tags[4]: archivist,paper-mcp,screenshot-pipeline,breakthrough
+
+# ─── Entry 20260317-010 ──────────────────────────────────────────────────
+entry_id: 20260317-010
+timestamp: "2026-03-17T20:31:21.065Z"
+session_date: 2026-03-17
+interaction_type: ideation
+phase: design
+importance: high
+status: resolved
+objective: "Pivot: scrap manual Paper MCP designs, restart using ui-ux-pro-max skill"
+interaction:
+  user_prompt: are you using the UI UX pro max skill for the designs? no scrap all designs and start using the skill
+  assistant_response_summary: "User identified that designs were being built without the ui-ux-pro-max skill. Decision: delete current Game Screen artboard and restart the design process using the skill for structured UX guidance — palettes, typography, spacing, heuristics, component patterns. Previous designs (top bar, P1/P2 panels, board) are archived in JSONL but will be replaced."
+tooling:
+  tools_used[1]: mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: "Paper: Game Screen — Desktop (to be replaced)"
+tags:
+  narrative_tags[4]: pivot,design-reset,ui-ux-pro-max,decision
+
+# ─── Entry 20260317-011 ──────────────────────────────────────────────────
+entry_id: 20260317-011
+timestamp: "2026-03-17T20:36:21.611Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: high
+status: resolved
+objective: "Game screen redesign using ui-ux-pro-max: dark gaming theme — nav, P1 panel, board, P2 panel"
+interaction:
+  user_prompt: "Scrap old designs, use ui-ux-pro-max skill, run archive with screenshots every 3-4 changes"
+  assistant_response_summary: "Rebuilt game screen with skill-guided dark gaming theme. Design system: dark navy #0F172A bg, #192134 surface, gold #D97706 accent, P1 blue #2563EB, P2 crimson #B91C1C. Fonts: Russo One (wordmark/avatars) + Chakra Petch (all UI). Added: top nav with gold mode badge + crimson resign; P1 active panel (blue avatar, YOUR TURN badge, green timer dot, square count); 8x8 board (alternating #0F172A/#192134, gold valid move highlights, both knights placed); P2 waiting panel (muted avatar, WAITING badge, dimmed timer). Bug noted: artboard bg still shows light — fix pending."
+tooling:
+  tools_used[2]: mcp__paper__write_html,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: "Paper: Game Screen — Desktop"
+tags:
+  narrative_tags[5]: paper-design,ui-ux-pro-max,dark-theme,game-screen,milestone
+
+# ─── Entry 20260317-012 ──────────────────────────────────────────────────
+entry_id: 20260317-012
+timestamp: "2026-03-17T20:48:32.038Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: high
+status: resolved
+objective: Complete dark gaming UI layout for Cavatrapi desktop game screen
+interaction:
+  user_prompt: please also run the archive as you were doing previously (with screenshots) for every change
+  assistant_response_summary: "Rebuilt main content layout in correct P1|Board|P2 order after flex-order bug. Added coordinate labels (rank 8-1 left, file a-h below), status bar, dark navy background. Screenshot saved as artifact 004."
+tooling:
+  tools_used[5]: mcp__paper__write_html,mcp__paper__update_styles,mcp__paper__delete_nodes,mcp__paper__get_screenshot,Bash
+  mcps_used[0]:
+  files_touched[1]: documentation_notes/records/2026-03-17/artifacts/004_game-screen-dark-layout-complete_paper-screenshot.jpg
+tags:
+  narrative_tags[2]: iteration,shipped
+
+# ─── Entry 20260317-013 ──────────────────────────────────────────────────
+entry_id: 20260317-013
+timestamp: "2026-03-17T22:08:27.073Z"
+session_date: 2026-03-17
+interaction_type: refinement
+phase: design
+importance: high
+status: resolved
+objective: Archive dark premium design before cartoon style pivot
+interaction:
+  user_prompt: Wholly different style — cartoon/neo-brutalism direction from new Lovable export
+  assistant_response_summary: "Archived final state of dark navy design (Russo One + Chakra Petch, dark #0F172A bg). Pivoting to cartoon style: sky-blue dots bg, white cards, heavy dark offset shadows, Nunito 900, P1=purple, P2=yellow."
+tooling:
+  tools_used[2]: mcp__paper__get_screenshot,Bash
+  mcps_used[0]:
+  files_touched[1]: documentation_notes/records/2026-03-17/artifacts/005_dark-theme-final-before-cartoon-pivot_paper-screenshot.jpg
+tags:
+  narrative_tags[2]: pivot,design-direction-change
+
+# ─── Entry 20260317-014 ──────────────────────────────────────────────────
+entry_id: 20260317-014
+timestamp: "2026-03-17T22:10:55.138Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: high
+status: resolved
+objective: Build Home screen in cartoon/neo-brutalist style
+interaction:
+  user_prompt: "Wholly different style from Lovable export — cartoon aesthetic with sky-blue dots, white cards, heavy offset shadows"
+  assistant_response_summary: "Home screen complete: sky-blue dot bg, white clouds, 380x760 white card with 12px offset dark shadow. CAVATRAPI title in yellow Nunito 900 with text-stroke. Purple+yellow overlapping knight pieces. Green PLAY NOW + Tutorial buttons with inset depth."
+tooling:
+  tools_used[4]: mcp__paper__create_artboard,mcp__paper__write_html,mcp__paper__update_styles,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: documentation_notes/records/2026-03-17/artifacts/006_home-screen-cartoon-v1_paper-screenshot.jpg
+tags:
+  narrative_tags[2]: breakthrough,cartoon-style
+
+# ─── Entry 20260317-015 ──────────────────────────────────────────────────
+entry_id: 20260317-015
+timestamp: "2026-03-17T22:13:04.364Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: medium
+status: resolved
+objective: Build Match Setup screen in cartoon style
+interaction:
+  user_prompt: Continue cartoon style prototype for Cavatrapi screens
+  assistant_response_summary: "Match Setup complete: header with back button, VS matchup panel (purple P1 vs yellow P2), Game Mode pill toggle (Casual/Ranked), Turn Clock selector (15s/30s/45s), Start Match purple CTA. All cartoon borders and shadows."
+tooling:
+  tools_used[3]: mcp__paper__create_artboard,mcp__paper__write_html,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: documentation_notes/records/2026-03-17/artifacts/007_match-setup-screen-cartoon-v1_paper-screenshot.jpg
+tags:
+  narrative_tags[1]: iteration
+
+# ─── Entry 20260317-016 ──────────────────────────────────────────────────
+entry_id: 20260317-016
+timestamp: "2026-03-17T22:17:39.187Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: high
+status: resolved
+objective: Complete Game Over/Victory screen in cartoon style
+interaction:
+  user_prompt: Build all Cavatrapi screens in cartoon/neo-brutalist style matching Lovable HTML export
+  assistant_response_summary: "Game Over card complete: VICTORY heading, winner piece with glow, P2 badge, stats card with Territories 32-18 and Total Score +1450, Rematch/Main Menu CTAs. Fixed number wrapping with white-space:nowrap."
+tooling:
+  tools_used[3]: mcp__paper__write_html,mcp__paper__delete_nodes,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: "paper-mcp-artboard:EX-0"
+tags:
+  narrative_tags[2]: iteration,shipped
+
+# ─── Entry 20260317-017 ──────────────────────────────────────────────────
+entry_id: 20260317-017
+timestamp: "2026-03-17T22:26:03.565Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: high
+status: resolved
+objective: Build Active Game screen from scratch in cartoon style
+interaction:
+  user_prompt: "Design Active Game board screen with P1 panel, 8x8 board card, P2 panel in cartoon/neo-brutalist aesthetic"
+  assistant_response_summary: "Active Game screen complete: P1 panel (purple avatar, YOUR TURN badge, 0:48 timer, timer bar, claimed 5, valid moves 6), Board card (8x8 grid with all 4 cell types, rank/file labels, MOVE 14 header, RESIGN button), P2 panel (muted yellow avatar, WAITING badge, 1:00 dimmed timer). Status bar pill at bottom."
+tooling:
+  tools_used[4]: mcp__paper__create_artboard,mcp__paper__write_html,mcp__paper__update_styles,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[1]: "paper-mcp-artboard:GX-0"
+tags:
+  narrative_tags[2]: breakthrough,shipped
+
+# ─── Entry 20260317-018 ──────────────────────────────────────────────────
+entry_id: 20260317-018
+timestamp: "2026-03-17T22:31:29.408Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: medium
+status: resolved
+objective: Build Timer Warning and Trapped/Skip game state variants
+interaction:
+  user_prompt: "Clone Active Game and create timer warning (0:12 red, LOW TIME) and trapped/skip (amber TRAPPED badge, P2 activated) variants"
+  assistant_response_summary: "Timer Warning: duplicate of Active Game with 0:12 red timer, LOW TIME badge, 20% red bar, warning toast. Trapped/Skip: TRAPPED amber badge on P1, P2 activated with YOUR TURN green badge, blue 1:00 timer, valid moves 0 for P1, skip toast."
+tooling:
+  tools_used[5]: mcp__paper__duplicate_nodes,mcp__paper__set_text_content,mcp__paper__update_styles,mcp__paper__write_html,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[2]: "paper-mcp-artboard:LZ-0","paper-mcp-artboard:R5-0"
+tags:
+  narrative_tags[2]: iteration,shipped
+
+# ─── Entry 20260317-019 ──────────────────────────────────────────────────
+entry_id: 20260317-019
+timestamp: "2026-03-17T22:32:51.113Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: design
+importance: critical
+status: resolved
+objective: Complete cartoon-style Paper MCP prototype — all 6 screens
+interaction:
+  user_prompt: "Build all Cavatrapi screens in cartoon/neo-brutalist style: Home, Match Setup, Active Game, Game Over, Timer Warning, Trapped/Skip"
+  assistant_response_summary: "All 6 screens shipped. Home (CAVATRAPI title, hero pieces, Play Now), Match Setup (VS panel, Casual/30s toggles, Start Match), Active Game (8x8 board, P1/P2 panels, all cell types), Game Over (VICTORY heading, stats, CTAs), Timer Warning (0:12 red, LOW TIME badge), Trapped/Skip (amber TRAPPED, P2 YOUR TURN). Sky-blue dot background, Nunito 900, cartoon shadows throughout."
+tooling:
+  tools_used[6]: mcp__paper__create_artboard,mcp__paper__write_html,mcp__paper__duplicate_nodes,mcp__paper__update_styles,mcp__paper__set_text_content,mcp__paper__get_screenshot
+  mcps_used[0]:
+  files_touched[6]: "paper-mcp-artboard:CL-0","paper-mcp-artboard:DF-0","paper-mcp-artboard:EX-0","paper-mcp-artboard:GX-0","paper-mcp-artboard:LZ-0","paper-mcp-artboard:R5-0"
+tags:
+  narrative_tags[2]: shipped,breakthrough
+
+# ─── Entry 20260317-020 ──────────────────────────────────────────────────
+entry_id: 20260317-020
+timestamp: "2026-03-17T23:01:00.000Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Wire server game session management and build Home screen
+interaction:
+  user_prompt: "lets archive and continue"
+  assistant_response_summary: "Server fully wired: session.ts (in-memory game store, matchmaking queue keyed by mode+clock, per-player clock tracking), socket.ts (JOIN_GAME matchmaking, SUBMIT_MOVE → applyMove → broadcast, RESIGN, REQUEST_AI_MOVE stub with random move, disconnect → opponent notified + game ended). Home screen built in cartoon style: sky-blue bg, white cartoon card (border 5px #1e293b, shadow 12x12), two KnightPieces (yellow + purple, angled), PLAY NOW CTA with MaterialCommunityIcons sword-cross icon, secondary Asset Pack button. Lobby stub created to unblock navigation. All typechecks pass."
+tooling:
+  tools_used[3]: Write,Edit,Bash
+  files_touched[5]: apps/server/src/session.ts,apps/server/src/socket.ts,apps/server/src/index.ts,apps/app/app/index.tsx,apps/app/app/lobby/index.tsx
+tags:
+  narrative_tags[3]: server,home-screen,shipped
+
+# ─── Entry 20260317-021 ──────────────────────────────────────────────────
+entry_id: 20260317-021
+timestamp: "2026-03-17T23:45:00.000Z"
+session_date: 2026-03-17
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Build game screen (full board + player panels + game over overlay) and capture screenshots of all screens
+interaction:
+  user_prompt: "lets go! / archive these steps and take screenshots for each page"
+  assistant_response_summary: "Built game store (Zustand), Board component (8x8, KnightPiece rendering, legal move green check via MaterialCommunityIcons), PlayerPanel component (avatar, name, badge, timer, claimed count), Game screen (header, both panels, board card, game-over overlay with WINS!/DRAW, REMATCH/Main Menu). Fixed Metro bundler .js extension resolution via metro.config.js. Captured Playwright screenshots at 390x844 for all 4 screens. Minor board overflow on right edge noted for fix."
+tooling:
+  tools_used[3]: Write,Bash,Read
+  files_touched[7]: apps/app/stores/gameStore.ts,apps/app/components/Board.tsx,apps/app/components/PlayerPanel.tsx,apps/app/app/game/[gameId].tsx,apps/app/metro.config.js,apps/app/app/_layout.tsx,documentation_notes/capture-screens.mjs
+  artifacts[4]: 012_home-screen-app-v1_app-screenshot.jpg,013_match-setup-app-v1_app-screenshot.jpg,014_game-screen-app-v1_app-screenshot.jpg,015_assets-screen-app-v1_app-screenshot.jpg
+tags:
+  narrative_tags[3]: game-screen,screenshots,shipped
+
+# ─── Entry 20260317-022 ──────────────────────────────────────────────────
+entry_id: 20260317-022
+timestamp: "2026-03-17T23:58:00.000Z"
+session_date: 2026-03-17
+interaction_type: fix
+phase: build
+importance: medium
+status: resolved
+objective: Fix board visual issues — overflow, alternating square contrast, piece visibility
+interaction:
+  user_prompt: "lets fix first / keep currently occupied square without visual changes just place piece on it"
+  assistant_response_summary: "Fixed cellSize calculation (explicit 80px overhead formula). Switched from flexWrap grid to explicit row-based layout for reliable rendering. Adjusted square colors (#eef3f8 / #b8cfe0) for better contrast. Piece cells now use natural square color — piece just floats on it. Result: both knights visible (P1 purple top-left, P2 yellow bottom-right), all 8 files and ranks showing cleanly."
+tooling:
+  tools_used[2]: Edit,Write
+  files_touched[2]: apps/app/components/Board.tsx,apps/app/app/game/[gameId].tsx
+  artifacts[1]: 014_game-screen-app-v4-final_app-screenshot.jpg
+tags:
+  narrative_tags[2]: fix,board
+
+# ─── Entry 20260317-023 ──────────────────────────────────────────────────
+entry_id: 20260317-023
+timestamp: "2026-03-18T00:20:00.000Z"
+session_date: 2026-03-17
+interaction_type: fix
+phase: build
+importance: high
+status: resolved
+objective: Fix 3 bugs reported after game screen first build
+interaction:
+  user_prompt: "archive all the bugs i requested to correct since last time we archived"
+  assistant_response_summary: |
+    Bug 1 — Timer is per-turn not per-game: Rewrote gameStore to remove per-player timeLeftMs Record. Now tracks only turnStartedAt + clockSeconds. On each move, clock resets to full for the next player. Inactive player panel shows full clock (e.g. 0:30 static). timerBarFill now accepts clockSeconds prop and computes fill ratio correctly.
+    Bug 2 — Board labels removed + bigger board: Stripped rank (left) and file (bottom) labels entirely from Board component. Freed 20px of horizontal space. Updated cellSize formula from (width-80)/8 to (width-60)/8, gaining ~2-3px per cell. Board is now larger and cleaner.
+    Bug 3 — Occupied square shows wrong color: Piece's current square was inheriting the claimed color (purple/yellow). Fixed cellBg() to always return the alternating board color (cellLight/cellDark) when a piece occupies the cell, regardless of ownership. Claimed color only shows on squares the piece has left behind.
+tooling:
+  tools_used[2]: Edit,Write
+  files_touched[4]: apps/app/stores/gameStore.ts,apps/app/components/Board.tsx,apps/app/components/PlayerPanel.tsx,apps/app/app/game/[gameId].tsx
+  artifacts[1]: 014_game-screen-app-v2_app-screenshot.jpg
+tags:
+  narrative_tags[2]: fix,bugs
+
+---
+entry_id: 015
+timestamp: 2026-03-17T23:59:00-04:00
+type: milestone
+phase: build
+importance: high
+objective: Complete multiplayer socket wiring — end of day
+response: Wired NetworkGameScreen in game/[gameId].tsx. GAME_STATE → applyServerState, GAME_OVER → setGameOver, SUBMIT_MOVE on tap when it's your turn. LocalGameScreen preserved. Both app and server typecheck clean. Session notes written to .dev/session-notes.md (gitignored). Full multiplayer loop is end-to-end: Home → Lobby matchmaking → /game/:gameId with server-driven board state.
+files_touched:
+  - apps/app/app/game/[gameId].tsx
+  - apps/app/stores/gameStore.ts
+  - .dev/session-notes.md
+  - .gitignore
+tags:
+  narrative_tags: multiplayer, socket, game-screen, end-of-day, milestone

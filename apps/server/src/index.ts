@@ -1,15 +1,16 @@
 import Fastify from 'fastify'
 import { Server } from 'socket.io'
+import { registerSocketHandlers } from './socket.js'
 
 const app = Fastify({ logger: true })
 
-// Socket.io attaches directly to the underlying Node http server (no Fastify v5 plugin needed)
 const io = new Server(app.server, {
   cors: { origin: '*' },
 })
 
 io.on('connection', (socket) => {
   app.log.info(`socket connected: ${socket.id}`)
+  registerSocketHandlers(io, socket)
 })
 
 app.get('/healthcheck', async () => {

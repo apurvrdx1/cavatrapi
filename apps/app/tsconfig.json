@@ -3,14 +3,17 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@cavatrapi/shared": ["../../packages/shared/src/index.ts"],
-      "@cavatrapi/engine": ["../../packages/engine/src/index.ts"]
+      "@cavatrapi/shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "@cavatrapi/engine": [
+        "../../packages/engine/src/index.ts"
+      ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".expo/types/**/*.d.ts",
-    "expo-env.d.ts"
+    ".expo/types/**/*.d.ts"
   ]
 }
