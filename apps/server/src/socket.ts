@@ -5,6 +5,7 @@ import { applyMove, getValidMoves } from '@cavatrapi/engine'
 import type { Square } from '@cavatrapi/engine'
 import { chooseBestMove } from '@cavatrapi/ai'
 import type { AIDifficulty } from '@cavatrapi/ai'
+import { saveGameSession } from './db.js'
 import {
   tryMatch,
   leaveQueue,
@@ -38,6 +39,26 @@ interface RequestAIMovePayload {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Fire-and-forget: persist a completed game to Supabase.
+ * Only runs when both player Clerk IDs are available (populated in Phase 5).
+ * Errors are logged but never surfaced to the client.
+ */
+function persistGame(session: GameSession, winnerId: string | null): void {
+  if (!session.playerIds) return
+  const durationSeconds = Math.round((Date.now() - session.startedAt) / 1000)
+  saveGameSession({
+    mode: session.mode,
+    p1Id: session.playerIds.P1,
+    p2Id: session.playerIds.P2,
+    winnerId,
+    moveCount: session.state.moveCount,
+    durationSeconds,
+  }).catch((err: unknown) => {
+    console.error('[db] saveGameSession failed:', err)
+  })
+}
 
 function playerRole(session: GameSession, socketId: string): Player | null {
   if (session.socketIds.P1 === socketId) return 'P1'
@@ -97,6 +118,7 @@ function startTurnTimer(io: Server, session: GameSession): void {
         state: session.state,
       })
 
+      persistGame(session, session.playerIds?.[winner] ?? null)
       removeSession(session.gameId)
     }
   }, 500)
@@ -172,6 +194,10 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
           state: session.state,
         })
 
+        const winnerPlayerId = (result.winner === 'P1' || result.winner === 'P2')
+          ? (session.playerIds?.[result.winner] ?? null)
+          : null
+        persistGame(session, winnerPlayerId)
         removeSession(session.gameId)
       } else {
         broadcastState(io, session)
@@ -212,6 +238,7 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
       state: session.state,
     })
 
+    persistGame(session, session.playerIds?.[winner] ?? null)
     removeSession(session.gameId)
   })
 

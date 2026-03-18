@@ -16,7 +16,11 @@ export interface GameSession {
   timeLeftMs: Record<Player, number>
   /** When the current turn started (Date.now()) */
   turnStartedAt: number
+  /** When the game started (Date.now()) — used for duration_seconds on save */
+  startedAt: number
   tickInterval: ReturnType<typeof setInterval> | null
+  /** Clerk user IDs — populated after JWT auth (Phase 5). Null until then. */
+  playerIds: Record<Player, string> | null
 }
 
 export interface QueueEntry {
@@ -55,7 +59,9 @@ export function createSession(
     socketIds: { P1: p1SocketId, P2: p2SocketId },
     timeLeftMs: { P1: timeLeftMs, P2: timeLeftMs },
     turnStartedAt: Date.now(),
+    startedAt: Date.now(),
     tickInterval: null,
+    playerIds: null,
   }
 
   sessions.set(gameId, session)
