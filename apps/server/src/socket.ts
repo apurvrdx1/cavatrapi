@@ -3,6 +3,8 @@ import { SOCKET_EVENTS, SERVER_EVENTS } from '@cavatrapi/shared'
 import type { GameMode, Player } from '@cavatrapi/shared'
 import { applyMove, getValidMoves } from '@cavatrapi/engine'
 import type { Square } from '@cavatrapi/engine'
+import { chooseBestMove } from '@cavatrapi/ai'
+import type { AIDifficulty } from '@cavatrapi/ai'
 import {
   tryMatch,
   leaveQueue,
@@ -28,6 +30,11 @@ interface SubmitMovePayload {
 
 interface ResignPayload {
   gameId: string
+}
+
+interface RequestAIMovePayload {
+  gameId: string
+  difficulty?: AIDifficulty
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -208,8 +215,8 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     removeSession(session.gameId)
   })
 
-  // ── REQUEST_AI_MOVE (stub) ─────────────────────────────────────────────────
-  socket.on(SOCKET_EVENTS.REQUEST_AI_MOVE, (payload: { gameId: string }) => {
+  // ── REQUEST_AI_MOVE ────────────────────────────────────────────────────────
+  socket.on(SOCKET_EVENTS.REQUEST_AI_MOVE, (payload: RequestAIMovePayload) => {
     const session = getSessionBySocket(socket.id)
     if (!session || session.gameId !== payload.gameId) return
 
@@ -219,10 +226,16 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     const validMoves = getValidMoves(session.state, role)
     if (validMoves.length === 0) return
 
-    // Random move for now — AI package will replace this in Phase 3
-    const move = validMoves[Math.floor(Math.random() * validMoves.length)]!
+    const difficulty = payload.difficulty ?? 'MEDIUM'
+    const { move } = chooseBestMove(session.state, role, difficulty)
+    const gameId = session.gameId
 
-    socket.emit(SOCKET_EVENTS.SUBMIT_MOVE, { gameId: session.gameId, to: move })
+    // 500ms display delay before emitting so the move feels deliberate
+    setTimeout(() => {
+      const current = getSessionBySocket(socket.id)
+      if (!current || current.gameId !== gameId) return
+      socket.emit(SOCKET_EVENTS.SUBMIT_MOVE, { gameId, to: move })
+    }, 500)
   })
 
   // ── DISCONNECT ─────────────────────────────────────────────────────────────

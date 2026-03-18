@@ -44,6 +44,17 @@ export default function HomeScreen() {
         >
           <Text style={styles.btnSecondaryText}>Asset Pack</Text>
         </Pressable>
+
+        {/* Profile link */}
+        <Pressable
+          style={styles.profileLink}
+          onPress={() => router.push('/profile')}
+          accessibilityLabel="View profile"
+          accessibilityRole="button"
+        >
+          <MaterialCommunityIcons name="account-circle-outline" size={18} color="#64748b" />
+          <Text style={styles.profileLinkText}>My Profile</Text>
+        </Pressable>
       </View>
     </View>
   )
@@ -190,5 +201,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#475569',
     letterSpacing: 1,
+  },
+  profileLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  profileLinkText: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#64748b',
   },
 })
