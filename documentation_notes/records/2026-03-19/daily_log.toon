@@ -145,3 +145,26 @@ session_id: sess-20260319-A7F1
 status: in_progress
 commits_this_session: 9
 commits_pending_push: 9
+
+# ─── Entry 20260319-006 ──────────────────────────────────────────────────
+entry_id: 20260319-006
+timestamp: "2026-03-19T23:00:00.000Z"
+session_date: 2026-03-19
+interaction_type: deployment
+phase: deploy
+importance: high
+status: resolved
+objective: Fly.io server deployment
+interaction:
+  user_prompt: "i think it was a success"
+  assistant_response_summary: |
+    Successfully deployed cavatrapi-server to Fly.io at https://cavatrapi-server.fly.dev
+    Health check confirmed: {"status":"ok","timestamp":"..."}
+    Fixed fly.toml bug: dockerfile path must be relative to config file location ("Dockerfile")
+    not relative to CWD ("apps/server/Dockerfile") to avoid doubled path resolution.
+    Machine: shared-cpu-1x 256mb, auto_stop_machines=stop, min_machines_running=0.
+files_modified:
+  - apps/server/fly.toml
+commits:
+  - "fix: fly.toml dockerfile path relative to config file"
+url: https://cavatrapi-server.fly.dev
