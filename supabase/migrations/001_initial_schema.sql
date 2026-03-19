@@ -46,21 +46,22 @@ alter table game_sessions enable row level security;
 alter table player_stats enable row level security;
 
 -- Players can read their own row
+-- auth.uid() works with Supabase third-party auth (Clerk configured as provider)
 create policy "players: self read"
   on players for select
-  using (id = (current_setting('request.jwt.claims', true)::json->>'sub'));
+  using (id = auth.uid()::text);
 
 -- Players can read their own stats
 create policy "player_stats: self read"
   on player_stats for select
-  using (player_id = (current_setting('request.jwt.claims', true)::json->>'sub'));
+  using (player_id = auth.uid()::text);
 
 -- Players can read game sessions they participated in
 create policy "game_sessions: participant read"
   on game_sessions for select
   using (
-    p1_id = (current_setting('request.jwt.claims', true)::json->>'sub')
-    or p2_id = (current_setting('request.jwt.claims', true)::json->>'sub')
+    p1_id = auth.uid()::text
+    or p2_id = auth.uid()::text
   );
 
 -- ─── increment_player_stats RPC ──────────────────────────────────────────────
