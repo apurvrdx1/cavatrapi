@@ -1,0 +1,147 @@
+# ─── session_open ─────────────────────────────────────────────────────────
+event: session_open
+timestamp: "2026-03-19T10:00:00.000Z"
+session_id: sess-20260319-A7F1
+project_name: cavatrapi
+opened_at: "2026-03-19T10:00:00.000Z"
+
+# ─── Entry 20260319-001 ──────────────────────────────────────────────────
+entry_id: 20260319-001
+timestamp: "2026-03-19T10:05:00.000Z"
+session_date: 2026-03-19
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Wire AI into server socket handler + add PostHog analytics
+interaction:
+  user_prompt: "ok lets start for today"
+  assistant_response_summary: |
+    Resumed from previous session. Wired AI (chooseBestMove from @cavatrapi/ai) into
+    REQUEST_AI_MOVE socket event in apps/server/src/socket.ts with 500ms display delay.
+    Added PostHog analytics to Expo app: PostHogProvider in _layout.tsx, game_started/
+    move_made/game_ended events in game/[gameId].tsx, screen tracking via ScreenTracker.
+    Fixed stale AI dist issue (packages/ai/dist/index.d.ts only exported Square from old stub)
+    by rebuilding the AI package.
+files_modified:
+  - apps/server/src/socket.ts
+  - apps/app/app/_layout.tsx
+  - apps/app/app/game/[gameId].tsx
+commits:
+  - "feat: PostHog analytics - screen views, game_started, move_made, game_ended"
+
+# ─── Entry 20260319-002 ──────────────────────────────────────────────────
+entry_id: 20260319-002
+timestamp: "2026-03-19T10:30:00.000Z"
+session_date: 2026-03-19
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Clerk auth middleware + Supabase persistence layer
+interaction:
+  user_prompt: "ok lets setup clerk now so i can configure the clerk jwt bridge"
+  assistant_response_summary: |
+    Created apps/server/src/auth.ts with Clerk JWT verification via standalone verifyToken
+    (NOT method on ClerkClient — that's a breaking change in @clerk/backend).
+    Created apps/server/src/db.ts with Supabase client using service role key, upsertPlayer,
+    saveGameSession (calls increment_player_stats RPC), getPlayerStats.
+    Added startedAt and playerIds fields to GameSession in session.ts.
+    Added persistGame helper to socket.ts — fires on all 3 GAME_OVER paths.
+    Fixed verifyToken API: must import as standalone export, not as clerk.verifyToken().
+files_modified:
+  - apps/server/src/auth.ts (new)
+  - apps/server/src/db.ts (new)
+  - apps/server/src/session.ts
+  - apps/server/src/socket.ts
+  - apps/server/src/index.ts
+commits:
+  - "feat: Clerk auth - JWT verification on socket handshake, ClerkProvider in app"
+
+# ─── Entry 20260319-003 ──────────────────────────────────────────────────
+entry_id: 20260319-003
+timestamp: "2026-03-19T11:00:00.000Z"
+session_date: 2026-03-19
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Supabase project setup + RLS policy migration
+interaction:
+  user_prompt: "ok i created the supabase project what do i need to do next"
+  assistant_response_summary: |
+    Guided user through Supabase project setup. Ran migration SQL in Supabase SQL editor.
+    Discovered Supabase has deprecated legacy JWT secret approach in favor of third-party
+    auth providers. Updated RLS policies to use auth.uid() (Supabase third-party auth)
+    instead of current_setting('request.jwt.claims') (legacy JWT Secret approach).
+    User added Clerk as a third-party auth provider in Supabase Authentication settings.
+    Updated supabase/migrations/001_initial_schema.sql to match new policy approach.
+files_modified:
+  - supabase/migrations/001_initial_schema.sql
+commits:
+  - "fix: update RLS policies to use auth.uid() for Supabase third-party auth (Clerk)"
+
+# ─── Entry 20260319-004 ──────────────────────────────────────────────────
+entry_id: 20260319-004
+timestamp: "2026-03-19T11:30:00.000Z"
+session_date: 2026-03-19
+interaction_type: implementation
+phase: build
+importance: medium
+status: resolved
+objective: Fly.io Dockerfile + fly.toml + Vercel config
+interaction:
+  user_prompt: (continuing deployment setup)
+  assistant_response_summary: |
+    Created apps/server/Dockerfile with multi-stage pnpm monorepo build. Stage 1 builds
+    shared → engine → ai → server. Stage 2 copies production dist only.
+    Created apps/server/fly.toml with auto_stop_machines = "stop" and min_machines_running = 0
+    for cost-effective idle. Health check endpoint at /health.
+    Created vercel.json with SPA rewrite for Expo web build.
+    Created packages/email/src/index.ts with Resend scaffold.
+files_modified:
+  - apps/server/Dockerfile (new)
+  - apps/server/fly.toml (new)
+  - vercel.json (new)
+  - packages/email/src/index.ts (new)
+  - apps/server/.env.example (new)
+commits:
+  - "feat: Fly.io Dockerfile + fly.toml, Vercel config, Resend email scaffold"
+  - "feat: Sentry error tracking in app and server (no performance tracing)"
+  - "feat: Vercel config + Resend email package scaffold"
+  - "feat: socket reconnect for Fly.io cold wake, authStore Zustand store"
+
+# ─── Entry 20260319-005 ──────────────────────────────────────────────────
+entry_id: 20260319-005
+timestamp: "2026-03-19T12:00:00.000Z"
+session_date: 2026-03-19
+interaction_type: setup
+phase: config
+importance: high
+status: in_progress
+objective: Fill in real credentials for Supabase + Clerk, prepare for Fly.io deploy
+interaction:
+  user_prompt: "can you create those files for me and put in dummy data that i can replace easily"
+  assistant_response_summary: |
+    Created apps/server/.env with real Supabase URL + service role key + Clerk secret key
+    (user filled these in; files are gitignored). Created apps/app/.env.local with Clerk
+    publishable key. Both files confirmed gitignored — not in git status.
+    User has 9 commits ahead of origin/main ready to push.
+    Next steps: Fly.io deploy, Vercel deploy, register Sentry/PostHog/Resend.
+pending:
+  - flyctl launch --config apps/server/fly.toml
+  - flyctl secrets set CLERK_SECRET_KEY=... SUPABASE_URL=... etc
+  - Vercel project connection + env vars
+  - Sentry: 2 projects (React Native + Node.js)
+  - PostHog: get API key
+  - Resend: get API key + configure sending domain
+  - UptimeRobot monitor for https://cavatrapi-server.fly.dev/health
+  - Push 9 local commits to origin/main
+
+# ─── session_close ────────────────────────────────────────────────────────
+event: session_checkpoint
+timestamp: "2026-03-19T12:00:00.000Z"
+session_id: sess-20260319-A7F1
+status: in_progress
+commits_this_session: 9
+commits_pending_push: 9

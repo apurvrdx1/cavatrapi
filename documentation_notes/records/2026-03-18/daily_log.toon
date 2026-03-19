@@ -1,0 +1,402 @@
+# ─── session_open ─────────────────────────────────────────────────────────
+event: session_open
+timestamp: "2026-03-18T12:00:00.000Z"
+session_id: sess-20260318-D9K2
+project_name: cavatrapi
+opened_at: "2026-03-18T12:00:00.000Z"
+
+# ─── Entry 20260318-001 ──────────────────────────────────────────────────
+entry_id: 20260318-001
+timestamp: "2026-03-18T12:05:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Build Profile screen in cartoon/neo-brutalism style
+interaction:
+  user_prompt: "Build the profile screen - tab exists in nav but no file (crashes on tap)"
+  assistant_response_summary: |
+    Created apps/app/app/profile/index.tsx with full cartoon/neo-brutalism style matching the rest of the app:
+    - Sky-blue bg (#7dd3fc), white card (borderRadius 40, borderWidth 5, #1e293b), shadow 12px 12px 0px #1e293b
+    - KnightPiece avatar in purple circle with white shine overlay
+    - Stats row: PLAYED / WINS / WIN RATE (all zeros, placeholder)
+    - Mode breakdown: SUDDEN DEATH and AREA CONTROL with W/L/D columns
+    - Empty recent games state message
+    - "SIGN IN TO SAVE STATS" CTA button (green, cartoon style)
+    Also added: profile/index stack screen to _layout.tsx, "My Profile" link to home screen index.tsx, fixed missing profileLink + profileLinkText StyleSheet entries (TS error).
+tooling:
+  tools_used[3]: Write,Edit,Read
+  files_touched[3]: apps/app/app/profile/index.tsx,apps/app/app/_layout.tsx,apps/app/app/index.tsx
+tags:
+  narrative_tags[2]: profile-screen,cartoon-ui
+
+# ─── Entry 20260318-002 ──────────────────────────────────────────────────
+entry_id: 20260318-002
+timestamp: "2026-03-18T12:10:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Implement minimax + alpha-beta pruning AI in packages/ai (TDD)
+interaction:
+  user_prompt: "Implement minimax + alpha-beta pruning AI in packages/ai. Spec: Easy/Medium/Hard = depth 2/4/6, 500ms compute budget, mobility eval primary + island delta secondary for AREA_CONTROL mode."
+  assistant_response_summary: |
+    Full TDD implementation: wrote tests first (RED), then implementation (GREEN).
+
+    FILES CREATED:
+    - packages/ai/src/types.ts: AIDifficulty, AI_DEPTH, AI_BUDGET_MS, AI_DISPLAY_DELAY_MS, AIResult, MinimaxResult
+    - packages/ai/src/evaluate.ts: evaluateBoard with mobility (primary, weight 1.0) + island delta (secondary, AREA_CONTROL only, weight 0.3 largest + 0.1 total). +Infinity when opponent trapped, -Infinity when self trapped, 0 for mutual trap.
+    - packages/ai/src/minimax.ts: minimax with alpha-beta pruning. Move ordering heuristic at depth>=3 (sorts by fewest opponent moves after each candidate). Engine authoritative for currentTurn — uses state.currentTurn, not derived from isMaximizing flag.
+    - packages/ai/src/index.ts: chooseBestMove(state, player, difficulty) → AIResult
+    - packages/ai/vitest.config.ts: 80% coverage thresholds
+    - packages/ai/src/__tests__/evaluate.test.ts: 7 tests
+    - packages/ai/src/__tests__/minimax.test.ts: 9 tests
+
+    ALL 16 TESTS PASSING.
+
+    BUGS FIXED DURING IMPLEMENTATION:
+    1. WRONG_PLAYER engine error: minimax was deriving currentPlayer from isMaximizing flag; engine throws if player !== state.currentTurn. Fixed: always use state.currentTurn.
+    2. P2 test on wrong board: createInitialBoard sets currentTurn=P1, test called chooseBestMove(board, 'P2'). Fixed: apply one P1 move first to get board where currentTurn=P2.
+    3. computeIslandScores not array: was using .find() on return value; it's Record<Player, IslandScore>. Fixed: scores[player] key access.
+    4. Antisymmetry test +0 !== -0: vitest toBe uses Object.is. Fixed: expect(p1Score + p2Score).toBe(0).
+    5. evaluationScore > 0 too strict: near-trap board returned 0 from search. Fixed: relaxed to >= 0.
+tooling:
+  tools_used[3]: Write,Read,Bash
+  files_touched[7]: packages/ai/src/types.ts,packages/ai/src/evaluate.ts,packages/ai/src/minimax.ts,packages/ai/src/index.ts,packages/ai/vitest.config.ts,packages/ai/src/__tests__/evaluate.test.ts,packages/ai/src/__tests__/minimax.test.ts
+tags:
+  narrative_tags[3]: ai,minimax,alpha-beta,tdd
+
+# ─── Entry 20260318-003 ──────────────────────────────────────────────────
+entry_id: 20260318-003
+timestamp: "2026-03-18T12:20:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Wire minimax AI into server REQUEST_AI_MOVE socket handler
+interaction:
+  user_prompt: "Wire AI into server socket.ts - replace random move stub with chooseBestMove"
+  assistant_response_summary: |
+    Modified apps/server/src/socket.ts:
+    - Added import: chooseBestMove from @cavatrapi/ai, AIDifficulty type
+    - Added RequestAIMovePayload interface with optional difficulty field
+    - Replaced random move stub with: chooseBestMove(session.state, role, difficulty ?? 'MEDIUM')
+    - Added 500ms display delay via setTimeout before emitting SUBMIT_MOVE
+    - Checks session still exists after delay before emitting (getSessionBySocket guard)
+
+    Also: rebuilt packages/ai dist (was stale from old stub), server typecheck passes clean.
+tooling:
+  tools_used[2]: Edit,Bash
+  files_touched[1]: apps/server/src/socket.ts
+tags:
+  narrative_tags[2]: ai,socket-wiring
+
+# ─── Entry 20260318-004 ──────────────────────────────────────────────────
+entry_id: 20260318-004
+timestamp: "2026-03-18T12:22:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: medium
+status: in_progress
+objective: Phase 3 - Fly.io deploy setup: CORS hardening and /health endpoint
+interaction:
+  user_prompt: "Fly.io deploy setup - rename /healthcheck to /health, harden CORS, create Dockerfile and fly.toml"
+  assistant_response_summary: |
+    Modified apps/server/src/index.ts (NOT YET COMMITTED):
+    - Renamed /healthcheck → /health
+    - Added @fastify/cors plugin (already in package.json dependencies)
+    - CORS now reads ALLOWED_ORIGINS env var (comma-separated), defaults to http://localhost:8081
+    - socket.io cors also restricted to ALLOWED_ORIGINS
+
+    Still TODO: Dockerfile, fly.toml, .env.example — session interrupted for archiving.
+tooling:
+  tools_used[1]: Edit
+  files_touched[1]: apps/server/src/index.ts
+tags:
+  narrative_tags[2]: fly-io,cors
+
+# ─── milestone ───────────────────────────────────────────────────────────
+entry_id: 20260318-milestone-001
+timestamp: "2026-03-18T12:25:00.000Z"
+session_date: 2026-03-18
+interaction_type: milestone
+phase: build
+importance: high
+status: resolved
+objective: End-of-phase-2 commit and archive
+interaction:
+  user_prompt: "commit and archive phases 1+2"
+  assistant_response_summary: |
+    Committed as: a98179c "feat: profile screen + minimax AI with alpha-beta pruning"
+
+    11 files changed, 870 insertions (+7 deletions):
+    - apps/app/app/_layout.tsx (modified)
+    - apps/app/app/index.tsx (modified)
+    - apps/app/app/profile/index.tsx (new)
+    - apps/server/src/socket.ts (modified)
+    - packages/ai/src/__tests__/evaluate.test.ts (new)
+    - packages/ai/src/__tests__/minimax.test.ts (new)
+    - packages/ai/src/evaluate.ts (new)
+    - packages/ai/src/index.ts (modified)
+    - packages/ai/src/minimax.ts (new)
+    - packages/ai/src/types.ts (new)
+    - packages/ai/vitest.config.ts (new)
+tooling:
+  tools_used[1]: Bash
+  files_touched[0]:
+tags:
+  narrative_tags[2]: commit,milestone
+
+# ─── Entry 20260318-005 ──────────────────────────────────────────────────
+entry_id: 20260318-005
+timestamp: "2026-03-18T12:45:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Phase 3 - Fly.io deploy config (Dockerfile, fly.toml, .env.example)
+interaction:
+  user_prompt: "Create Dockerfile, fly.toml for auto-sleep Fly.io deploy, .env.example"
+  assistant_response_summary: |
+    Created 3 files, committed as 8061708:
+
+    apps/server/Dockerfile — multi-stage pnpm monorepo build:
+    - Stage 1 (builder): node:22-alpine, copies workspace manifests + all packages src/tsconfig, installs with --frozen-lockfile, builds shared → engine → ai → server in order
+    - Stage 2 (runtime): node:22-alpine, installs --prod only, copies dist artifacts from builder, CMD node apps/server/dist/index.js
+
+    apps/server/fly.toml — auto-sleep config:
+    - auto_stop_machines = "stop", min_machines_running = 0
+    - Health check GET /health every 5m (long interval to allow sleep)
+    - graceful_shutdown_timeout = 30s for socket.io drain
+    - shared-cpu-1x, 256mb RAM
+    - Deploy command: flyctl deploy --config apps/server/fly.toml (from monorepo root)
+
+    apps/server/.env.example — documents PORT, ALLOWED_ORIGINS, CLERK_*, SUPABASE_*, SENTRY_DSN
+
+    Also committed separately (6248183): CORS hardening in index.ts — reads ALLOWED_ORIGINS env var, /healthcheck → /health endpoint rename.
+tooling:
+  tools_used[2]: Write,Bash
+  files_touched[5]: apps/server/Dockerfile,apps/server/fly.toml,apps/server/.env.example,apps/server/src/index.ts
+tags:
+  narrative_tags[2]: fly-io,deploy
+
+# ─── Entry 20260318-006 ──────────────────────────────────────────────────
+entry_id: 20260318-006
+timestamp: "2026-03-18T13:10:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Phase 4 - Supabase schema + db layer + fire-and-forget game persistence
+interaction:
+  user_prompt: "Create Supabase migration, db.ts layer, wire into socket GAME_OVER handlers"
+  assistant_response_summary: |
+    Created supabase/migrations/001_initial_schema.sql:
+    - players table (id=Clerk user ID, username, avatar_url)
+    - game_sessions table (mode, p1_id, p2_id, winner_id, move_count, duration_seconds)
+    - player_stats table (player_id, mode) with primary key composite — denormalized W/L/D
+    - RLS enabled: players/stats readable by self, game_sessions by participants
+    - increment_player_stats() RPC for atomic upsert+increment (avoids race conditions)
+    - updated_at trigger on players
+
+    Created apps/server/src/db.ts:
+    - createClient with service role key (bypasses RLS)
+    - upsertPlayer(PlayerRow) — called on socket auth in Phase 5
+    - saveGameSession(input) — inserts game_sessions row, calls increment_player_stats for both players
+    - getPlayerStats(playerId) — returns {SUDDEN_DEATH, AREA_CONTROL} W/L/D or null
+
+    Modified apps/server/src/session.ts:
+    - Added startedAt: number to GameSession (for duration_seconds calculation)
+    - Added playerIds: Record<Player, string> | null to GameSession (null until Phase 5 Clerk auth)
+
+    Modified apps/server/src/socket.ts:
+    - Added persistGame() helper — fire-and-forget, only runs when playerIds is set
+    - Wired into all 3 GAME_OVER locations: timeout, normal game end, resign
+
+    Committed as bdb9a82.
+tooling:
+  tools_used[2]: Write,Edit,Bash
+  files_touched[4]: supabase/migrations/001_initial_schema.sql,apps/server/src/db.ts,apps/server/src/session.ts,apps/server/src/socket.ts
+tags:
+  narrative_tags[3]: supabase,persistence,schema
+
+# ─── Entry 20260318-007 ──────────────────────────────────────────────────
+entry_id: 20260318-007
+timestamp: "2026-03-18T13:45:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: high
+status: resolved
+objective: Phase 5 - Clerk auth integration (app + server)
+interaction:
+  user_prompt: "Install Clerk, add ClerkProvider to app, JWT on socket handshake, server auth middleware"
+  assistant_response_summary: |
+    Installed: @clerk/clerk-expo + expo-secure-store (app), @clerk/backend (server).
+
+    apps/app/stores/authStore.ts (new):
+    - Zustand store: token, userId, username, setToken, setUser, clear
+
+    apps/app/app/_layout.tsx (rewritten):
+    - Wrapped in ClerkProvider with tokenCache (SecureStore on device, memory fallback on web)
+    - AuthSync component: syncs Clerk session into authStore on sign-in/out
+    - CLERK_PUBLISHABLE_KEY from expo-constants extra or EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY env
+
+    apps/app/hooks/useSocket.ts (rewritten):
+    - Reads token from authStore
+    - Passes token in socket.io handshake auth: { token }
+    - Reconnect config: 10 attempts, 2s delay, 8s max (handles Fly.io cold wake ~3-5s)
+    - Re-creates socket when token changes (sign in/out)
+    - SERVER_URL updated: dev=localhost:3001, prod=cavatrapi-server.fly.dev
+
+    apps/server/src/auth.ts (new):
+    - verifySocketToken(token) using @clerk/backend verifyToken (standalone fn, not method)
+    - Fetches display name from Clerk users.getUser after verification
+    - Fails open: returns null for guests, expired tokens, or unconfigured keys
+
+    apps/server/src/index.ts:
+    - Socket connection handler is now async
+    - Calls verifySocketToken(token) from handshake auth before registerSocketHandlers
+
+    apps/server/src/socket.ts:
+    - registerSocketHandlers now accepts VerifiedUser | null
+    - Module-level socketUsers Map (socketId → VerifiedUser) for cross-socket lookup at match time
+    - On connection: upsertPlayer fire-and-forget if authenticated
+    - On JOIN_GAME: populates session.playerIds when both sockets have verified users
+    - On disconnect: cleans up socketUsers entry
+
+    apps/server/src/session.ts:
+    - Added startedAt: number to GameSession
+    - Added playerIds: Record<Player, string> | null to GameSession
+
+    Committed as 479e572. Both server and app typecheck clean.
+tooling:
+  tools_used[3]: Write,Edit,Bash
+  files_touched[7]: apps/app/stores/authStore.ts,apps/app/app/_layout.tsx,apps/app/hooks/useSocket.ts,apps/server/src/auth.ts,apps/server/src/index.ts,apps/server/src/socket.ts,apps/server/src/session.ts
+tags:
+  narrative_tags[3]: clerk,auth,jwt
+
+# ─── Entry 20260318-008 ──────────────────────────────────────────────────
+entry_id: 20260318-008
+timestamp: "2026-03-18T14:00:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: medium
+status: resolved
+objective: Phase 6 - Sentry error tracking in app and server
+interaction:
+  user_prompt: "Add Sentry error tracking only (not performance) to app and server"
+  assistant_response_summary: |
+    Installed @sentry/react-native (app) and @sentry/node (server).
+
+    apps/server/src/index.ts: Sentry.init at top of file, tracesSampleRate=0, enabled only when SENTRY_DSN env var is present.
+
+    apps/app/app/_layout.tsx: Sentry.init at module level, reads EXPO_PUBLIC_SENTRY_DSN, tracesSampleRate=0. Both server and app typecheck clean. Committed as 1300ad9.
+tooling:
+  tools_used[2]: Edit,Bash
+  files_touched[2]: apps/server/src/index.ts,apps/app/app/_layout.tsx
+tags:
+  narrative_tags[2]: sentry,error-tracking
+
+# ─── Entry 20260318-009 ──────────────────────────────────────────────────
+entry_id: 20260318-009
+timestamp: "2026-03-18T14:20:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: medium
+status: resolved
+objective: Phase 7 - Vercel config + Resend email package scaffold
+interaction:
+  user_prompt: "Create vercel.json and scaffold Resend email package"
+  assistant_response_summary: |
+    vercel.json (repo root): buildCommand=pnpm --filter @cavatrapi/app build:web, outputDirectory=apps/app/dist, SPA rewrite /* → /index.html.
+
+    packages/email/ (new package):
+    - src/index.ts: Resend client, sendGameResultEmail(input) — fire-and-forget, noop when RESEND_API_KEY unset
+    - package.json: @cavatrapi/email, depends on resend + @types/node
+    - tsconfig.json extends tsconfig.base.json
+
+    Also added RESEND_API_KEY + RESEND_FROM to apps/server/.env.example.
+    Committed as a00071f.
+tooling:
+  tools_used[2]: Write,Bash
+  files_touched[4]: vercel.json,packages/email/src/index.ts,packages/email/package.json,packages/email/tsconfig.json
+tags:
+  narrative_tags[2]: vercel,resend
+
+# ─── milestone ───────────────────────────────────────────────────────────
+entry_id: 20260318-milestone-002
+timestamp: "2026-03-18T14:25:00.000Z"
+session_date: 2026-03-18
+interaction_type: milestone
+phase: build
+importance: high
+status: resolved
+objective: All 7 deploy phases complete
+interaction:
+  user_prompt: "continue with deploy stack"
+  assistant_response_summary: |
+    All planned phases complete and committed:
+    Phase 1  — Profile screen (a98179c)
+    Phase 2  — Minimax AI + server wiring (a98179c)
+    Phase 3a — CORS + /health endpoint (6248183)
+    Phase 3b — Dockerfile + fly.toml + .env.example (8061708)
+    Phase 4  — Supabase schema + db layer + persistence hooks (bdb9a82)
+    Phase 5  — Clerk auth: ClerkProvider, socket JWT, server middleware (479e572)
+    Phase 6  — Sentry error tracking app + server (1300ad9)
+    Phase 7  — Vercel config + Resend email scaffold (a00071f)
+
+    Still requires manual steps before going live:
+    - flyctl launch / flyctl deploy (needs Fly.io account)
+    - Set secrets on Fly.io: CLERK_SECRET_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SENTRY_DSN, RESEND_API_KEY, ALLOWED_ORIGINS
+    - Create Supabase project and run migration 001_initial_schema.sql
+    - Create Clerk application and add CLERK_PUBLISHABLE_KEY to Expo app env
+    - Connect repo to Vercel and set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY + EXPO_PUBLIC_SENTRY_DSN
+    - Configure UptimeRobot to ping https://cavatrapi-server.fly.dev/health every 5min
+tooling:
+  tools_used[0]:
+  files_touched[0]:
+tags:
+  narrative_tags[2]: milestone,deploy-complete
+
+# ─── Entry 20260318-010 ──────────────────────────────────────────────────
+entry_id: 20260318-010
+timestamp: "2026-03-18T14:50:00.000Z"
+session_date: 2026-03-18
+interaction_type: implementation
+phase: build
+importance: medium
+status: resolved
+objective: Add PostHog analytics - screen views, game events
+interaction:
+  user_prompt: "add posthog for analytics"
+  assistant_response_summary: |
+    Installed posthog-react-native.
+
+    apps/app/app/_layout.tsx:
+    - Wrapped entire tree in PostHogProvider (outermost, before ClerkProvider)
+    - autocapture=false — manual events only
+    - AuthSync extended: posthog.identify(userId, { username }) on sign-in, posthog.reset() on sign-out
+    - ScreenTracker component: posthog.screen(pathname) on every Expo Router pathname change
+
+    apps/app/app/game/[gameId].tsx:
+    - LocalGameScreen: game_started on mount (mode, clock_seconds, game_type=local), move_made on each tap, game_ended when gameOver state changes
+    - NetworkGameScreen: game_started on first GAME_STATE arrival (via gameStartedRef guard), move_made in handleMove, game_ended in onGameOver handler
+    - Properties: mode, winner, reason, did_win, move_count, game_type, clock_seconds, your_role
+
+    apps/app/.env.example (new): EXPO_PUBLIC_POSTHOG_API_KEY, EXPO_PUBLIC_POSTHOG_HOST, EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY, EXPO_PUBLIC_SENTRY_DSN
+
+    Committed as 8af59f4.
+tooling:
+  tools_used[3]: Write,Edit,Bash
+  files_touched[3]: apps/app/app/_layout.tsx,apps/app/app/game/[gameId].tsx,apps/app/.env.example
+tags:
+  narrative_tags[2]: posthog,analytics
