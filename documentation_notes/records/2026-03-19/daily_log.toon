@@ -168,3 +168,27 @@ files_modified:
 commits:
   - "fix: fly.toml dockerfile path relative to config file"
 url: https://cavatrapi-server.fly.dev
+
+# ─── Entry 20260319-007 ──────────────────────────────────────────────────
+entry_id: 20260319-007
+timestamp: "2026-03-19T23:30:00.000Z"
+session_date: 2026-03-19
+interaction_type: deployment
+phase: deploy
+importance: high
+status: resolved
+objective: Vercel web app deployment + CORS update
+interaction:
+  user_prompt: "deployed"
+  assistant_response_summary: |
+    Web app deployed to Vercel at https://cavatrapi-server.vercel.app (200 OK confirmed).
+    Updated Fly.io ALLOWED_ORIGINS secret to https://cavatrapi-server.vercel.app so
+    socket.io connections from the web app are not rejected. Both services live and
+    correctly wired: useSocket.ts already pointed at cavatrapi-server.fly.dev for prod.
+urls:
+  web: https://cavatrapi-server.vercel.app
+  server: https://cavatrapi-server.fly.dev
+pending:
+  - Sentry: 2 projects (React Native + Node.js), replace REPLACE_ME DSNs in Vercel + Fly secrets
+  - PostHog: get API key, update EXPO_PUBLIC_POSTHOG_API_KEY in Vercel
+  - UptimeRobot: monitor https://cavatrapi-server.fly.dev/health to prevent cold wakes
