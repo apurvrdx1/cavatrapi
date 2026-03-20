@@ -1,5 +1,3 @@
-import * as SentryNative from '@sentry/react-native'
-import * as SentryReact from '@sentry/react'
 import { Stack, usePathname } from 'expo-router'
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
@@ -8,22 +6,10 @@ import { useEffect } from 'react'
 import { Platform } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
 import Constants from 'expo-constants'
+import { initSentry } from '../utils/sentry'
 
-// ─── Sentry — @sentry/react on web, @sentry/react-native on iOS/Android ──────
-const SENTRY_DSN = process.env['EXPO_PUBLIC_SENTRY_DSN']
-if (Platform.OS === 'web') {
-  SentryReact.init({
-    dsn: SENTRY_DSN,
-    tracesSampleRate: 0,
-    enabled: !!SENTRY_DSN,
-  })
-} else {
-  SentryNative.init({
-    dsn: SENTRY_DSN,
-    tracesSampleRate: 0,
-    enabled: !!SENTRY_DSN,
-  })
-}
+// ─── Sentry — platform-specific module handles native vs web SDK ──────────────
+initSentry(process.env['EXPO_PUBLIC_SENTRY_DSN'])
 
 // ─── Clerk token cache ────────────────────────────────────────────────────────
 const tokenCache = {
@@ -47,7 +33,7 @@ const POSTHOG_HOST = process.env['EXPO_PUBLIC_POSTHOG_HOST'] ?? 'https://us.i.po
 const postHogOptions = {
   host: POSTHOG_HOST,
   ...(Platform.OS === 'web' && {
-    storageProvider: {
+    storage: {
       getItem: (key: string) => localStorage.getItem(key),
       setItem: (key: string, value: string) => localStorage.setItem(key, value),
       removeItem: (key: string) => localStorage.removeItem(key),
