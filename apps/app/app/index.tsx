@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable, Platform, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useAuth, useUser, useOAuth } from '@clerk/clerk-expo'
+import { useAuth, useUser, useOAuth, useSignIn } from '@clerk/clerk-expo'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { KnightPiece } from '../components/KnightPiece'
 import { useAuthStore } from '../stores/authStore'
@@ -12,7 +12,9 @@ export default function WelcomeScreen() {
   const { isSignedIn } = useAuth()
   const { user } = useUser()
   const { setUser, setGuest } = useAuthStore()
+  // Native: popup via expo-web-browser. Web: full-page redirect (no popup).
   const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
+  const { signIn } = useSignIn()
 
   const [guestLoading, setGuestLoading] = useState(false)
   const [signInLoading, setSignInLoading] = useState(false)
@@ -28,11 +30,21 @@ export default function WelcomeScreen() {
   async function handleSignIn() {
     try {
       setSignInLoading(true)
-      await startOAuthFlow()
-      // AuthSync in _layout.tsx handles setUser + redirect after OAuth completes
+      if (Platform.OS === 'web') {
+        // Full-page redirect — avoids COOP/window.closed issues with OAuth popups on web.
+        // ClerkProvider at the oauth-native-callback route handles the token exchange.
+        const redirectUrl = window.location.origin + '/oauth-native-callback'
+        await signIn?.authenticateWithRedirect({
+          strategy: 'oauth_google',
+          redirectUrl,
+          redirectUrlComplete: '/mode',
+        })
+      } else {
+        await startOAuthFlow()
+        // AuthSync in _layout.tsx handles setUser + redirect after OAuth completes
+      }
     } catch {
       // User cancelled or OAuth failed — silently reset
-    } finally {
       setSignInLoading(false)
     }
   }
