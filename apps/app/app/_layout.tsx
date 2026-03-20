@@ -4,15 +4,18 @@ import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import * as SecureStore from 'expo-secure-store'
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
 import Constants from 'expo-constants'
 
-// ─── Sentry — error tracking only ────────────────────────────────────────────
-Sentry.init({
-  dsn: process.env['EXPO_PUBLIC_SENTRY_DSN'],
-  tracesSampleRate: 0,
-  enabled: !!process.env['EXPO_PUBLIC_SENTRY_DSN'],
-})
+// ─── Sentry — native only (@sentry/react-native doesn't support web) ─────────
+if (Platform.OS !== 'web') {
+  Sentry.init({
+    dsn: process.env['EXPO_PUBLIC_SENTRY_DSN'],
+    tracesSampleRate: 0,
+    enabled: !!process.env['EXPO_PUBLIC_SENTRY_DSN'],
+  })
+}
 
 // ─── Clerk token cache ────────────────────────────────────────────────────────
 const tokenCache = {
@@ -31,6 +34,18 @@ const CLERK_PUBLISHABLE_KEY =
 
 const POSTHOG_API_KEY = process.env['EXPO_PUBLIC_POSTHOG_API_KEY'] ?? ''
 const POSTHOG_HOST = process.env['EXPO_PUBLIC_POSTHOG_HOST'] ?? 'https://us.i.posthog.com'
+
+// ─── PostHog storage — localStorage on web, default (AsyncStorage) on native ─
+const postHogOptions = {
+  host: POSTHOG_HOST,
+  ...(Platform.OS === 'web' && {
+    storageProvider: {
+      getItem: (key: string) => localStorage.getItem(key),
+      setItem: (key: string, value: string) => localStorage.setItem(key, value),
+      removeItem: (key: string) => localStorage.removeItem(key),
+    },
+  }),
+}
 
 // ─── Auth sync — keeps authStore in sync with Clerk + identifies PostHog user ─
 function AuthSync() {
@@ -73,7 +88,7 @@ function ScreenTracker() {
 
 export default function RootLayout() {
   return (
-    <PostHogProvider apiKey={POSTHOG_API_KEY} options={{ host: POSTHOG_HOST }} autocapture={false}>
+    <PostHogProvider apiKey={POSTHOG_API_KEY} options={postHogOptions} autocapture={false}>
       <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
         <AuthSync />
         <ScreenTracker />
