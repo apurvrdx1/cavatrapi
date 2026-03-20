@@ -183,8 +183,7 @@ function NetworkGameScreen({ gameId }: { gameId: string }) {
   }
 
   const activePlayer = board.currentTurn
-  const opponentRole: Player = yourRole === 'P1' ? 'P2' : 'P1'
-  const p1Claimed = board.claimed.flat().filter((c) => c === 'P1').length
+const p1Claimed = board.claimed.flat().filter((c) => c === 'P1').length
   const p2Claimed = board.claimed.flat().filter((c) => c === 'P2').length
   const p1Trapped = board.trappedOrder.includes('P1')
   const p2Trapped = board.trappedOrder.includes('P2')

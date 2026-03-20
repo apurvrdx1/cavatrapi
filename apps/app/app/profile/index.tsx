@@ -42,7 +42,7 @@ function ModeRow({ mode, wins, losses, draws }: { mode: string; wins: number; lo
 export default function ProfileScreen() {
   const router = useRouter()
   const { displayName, username: authUsername } = useAuthStore()
-  const { username, gamesPlayed, wins, losses, draws, modes } = PLACEHOLDER_STATS
+  const { username, gamesPlayed, wins, modes } = PLACEHOLDER_STATS
   const resolvedName = displayName ?? authUsername ?? username ?? 'Player'
   const winRate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0
 

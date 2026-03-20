@@ -19,7 +19,7 @@ export default function OnlineScreen() {
   const displayName = useAuthStore((s) => s.displayName)
   const settingsStore = useSettingsStore()
 
-  const [searching, setSearching] = useState(!isInviteMode)
+  const [searching] = useState(!isInviteMode)
   const [cancelled, setCancelled] = useState(false)
   const [code, setCode] = useState<string | null>(null)
 

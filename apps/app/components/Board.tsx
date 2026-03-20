@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { View, Pressable, StyleSheet } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { KnightPiece } from './KnightPiece'
 import type { BoardState } from '@cavatrapi/engine'

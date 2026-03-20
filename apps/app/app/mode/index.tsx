@@ -61,7 +61,7 @@ function ModePills({
 // ─── Mode card ────────────────────────────────────────────────────────────────
 
 function ModeCard({
-  modeKey,
+  modeKey: _modeKey,
   expanded,
   onToggle,
   accentColor,
