@@ -43,6 +43,23 @@ interface RequestAIMovePayload {
 // Maps socketId → VerifiedUser so we can look up both players at match time.
 const socketUsers = new Map<string, VerifiedUser>()
 
+// ─── Pending private rooms ────────────────────────────────────────────────────
+interface PendingRoom {
+  socketId: string
+  mode: GameMode
+  clockSeconds: number
+  expiresAt: number
+}
+const pendingRooms = new Map<string, PendingRoom>()
+
+// Expire rooms older than 10 minutes
+setInterval(() => {
+  const now = Date.now()
+  pendingRooms.forEach((room, code) => {
+    if (room.expiresAt < now) pendingRooms.delete(code)
+  })
+}, 5 * 60 * 1000)
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -153,6 +170,72 @@ export function registerSocketHandlers(io: Server, socket: Socket, user: Verifie
 
     // Pair found — create session
     const session = createSession(matched.socketId, socket.id, mode, clockSeconds)
+    const { gameId, socketIds } = session
+
+    // Populate playerIds if both sockets are authenticated
+    const p1User = socketUsers.get(socketIds.P1)
+    const p2User = socketUsers.get(socketIds.P2)
+    if (p1User && p2User) {
+      session.playerIds = { P1: p1User.userId, P2: p2User.userId }
+    }
+
+    // Join socket rooms
+    io.sockets.sockets.get(socketIds.P1)?.join(gameId)
+    io.sockets.sockets.get(socketIds.P2)?.join(gameId)
+
+    // Notify both players
+    io.to(socketIds.P1).emit(SERVER_EVENTS.GAME_CREATED, {
+      gameId,
+      yourRole: 'P1',
+      opponentSocketId: socketIds.P2,
+    })
+    io.to(socketIds.P2).emit(SERVER_EVENTS.GAME_CREATED, {
+      gameId,
+      yourRole: 'P2',
+      opponentSocketId: socketIds.P1,
+    })
+
+    broadcastState(io, session)
+    startTurnTimer(io, session)
+  })
+
+  // ── CREATE_PRIVATE_GAME ────────────────────────────────────────────────────
+  socket.on('create_private_game', (payload: { mode: GameMode; clockSeconds: number }) => {
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase()
+    pendingRooms.set(code, {
+      socketId: socket.id,
+      mode: payload.mode,
+      clockSeconds: payload.clockSeconds,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    })
+    socket.emit('private_game_created', { code })
+  })
+
+  // ── JOIN_PRIVATE_GAME ──────────────────────────────────────────────────────
+  socket.on('join_private_game', async (payload: { code: string }) => {
+    const room = pendingRooms.get(payload.code)
+    if (!room) {
+      socket.emit('private_game_error', { reason: 'not_found' })
+      return
+    }
+    if (room.expiresAt < Date.now()) {
+      pendingRooms.delete(payload.code)
+      socket.emit('private_game_error', { reason: 'expired' })
+      return
+    }
+
+    const hostSocket = io.sockets.sockets.get(room.socketId)
+    if (!hostSocket) {
+      pendingRooms.delete(payload.code)
+      socket.emit('private_game_error', { reason: 'host_left' })
+      return
+    }
+
+    pendingRooms.delete(payload.code)
+
+    // Create game session — same pattern as JOIN_GAME matchmaking
+    // P1 = host (room.socketId), P2 = joiner (socket.id)
+    const session = createSession(room.socketId, socket.id, room.mode, room.clockSeconds)
     const { gameId, socketIds } = session
 
     // Populate playerIds if both sockets are authenticated
