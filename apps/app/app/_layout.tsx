@@ -2,11 +2,15 @@ import { Stack, usePathname } from 'expo-router'
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import * as SecureStore from 'expo-secure-store'
+import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
 import { Platform } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
 import Constants from 'expo-constants'
 import { initSentry } from '../utils/sentry'
+import { useFonts, Nunito_600SemiBold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito'
+
+SplashScreen.preventAutoHideAsync()
 
 // ─── Sentry — platform-specific module handles native vs web SDK ──────────────
 initSentry(process.env['EXPO_PUBLIC_SENTRY_DSN'])
@@ -80,6 +84,14 @@ function ScreenTracker() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({ Nunito_600SemiBold, Nunito_800ExtraBold, Nunito_900Black })
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync()
+  }, [fontsLoaded])
+
+  if (!fontsLoaded) return null
+
   return (
     <PostHogProvider apiKey={POSTHOG_API_KEY} options={postHogOptions} autocapture={false}>
       <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
