@@ -1,16 +1,19 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, Platform, useWindowDimensions, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { usePostHog } from 'posthog-react-native'
 import { useGameStore } from '../../stores/gameStore'
 import { useNetworkGameStore } from '../../stores/networkGameStore'
+import { useAuthStore } from '../../stores/authStore'
 import { useSocket } from '../../hooks/useSocket'
 import { Board } from '../../components/Board'
 import { PlayerPanel } from '../../components/PlayerPanel'
 import { SOCKET_EVENTS, SERVER_EVENTS } from '@cavatrapi/shared'
 import type { GameMode, Player } from '@cavatrapi/shared'
 import type { Square, BoardState } from '@cavatrapi/engine'
+import { chooseBestMove, AI_DISPLAY_DELAY_MS } from '@cavatrapi/ai'
+import type { AIDifficulty } from '@cavatrapi/ai'
 
 // ─── Local game screen ────────────────────────────────────────────────────────
 
@@ -228,6 +231,108 @@ function NetworkGameScreen({ gameId }: { gameId: string }) {
   )
 }
 
+// ─── AI game screen ───────────────────────────────────────────────────────────
+
+function AIGameScreen({ mode, clock, difficulty }: { mode: GameMode; clock: number; difficulty: AIDifficulty }) {
+  const router = useRouter()
+  const { width } = useWindowDimensions()
+  const { board, validMoves, turnStartedAt, clockSeconds, gameOver, initGame, makeMove, tickTimer, resign } =
+    useGameStore()
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const posthog = usePostHog()
+  const [isAIThinking, setIsAIThinking] = useState(false)
+  const displayName = useAuthStore((s) => s.displayName)
+
+  useEffect(() => {
+    initGame(mode, clock as 15 | 30 | 45)
+    posthog?.capture('game_started', { mode, clock_seconds: clock, game_type: 'ai', difficulty })
+  }, [])
+
+  useEffect(() => {
+    tickRef.current = setInterval(() => tickTimer(), 500)
+    return () => { if (tickRef.current) clearInterval(tickRef.current) }
+  }, [])
+
+  useEffect(() => {
+    if (!gameOver) return
+    if (tickRef.current) clearInterval(tickRef.current)
+    posthog?.capture('game_ended', {
+      game_type: 'ai',
+      difficulty,
+      winner: gameOver.winner,
+      reason: gameOver.reason,
+      move_count: board?.moveCount ?? null,
+    })
+  }, [gameOver])
+
+  // AI turn effect
+  useEffect(() => {
+    if (!board || board.status !== 'IN_PROGRESS') return
+    if (board.currentTurn !== 'P2') return
+    if (isAIThinking) return
+
+    setIsAIThinking(true)
+    const timer = setTimeout(() => {
+      const result = chooseBestMove(board, 'P2', difficulty)
+      if (result) makeMove(result.move)
+      setIsAIThinking(false)
+    }, AI_DISPLAY_DELAY_MS)
+
+    return () => clearTimeout(timer)
+  }, [board?.currentTurn, board?.moveCount])
+
+  const cellSize = Math.floor((Math.min(width, 420) - 60) / 8)
+
+  function handleResign() {
+    if (!board) return
+    if (Platform.OS === 'web') { resign('P1'); return }
+    Alert.alert('Resign?', 'Forfeit this game?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Resign', style: 'destructive', onPress: () => resign('P1') },
+    ])
+  }
+
+  if (!board) {
+    return (
+      <View style={styles.bg}>
+        <Text style={styles.loading}>Loading…</Text>
+      </View>
+    )
+  }
+
+  const activePlayer = board.currentTurn
+  const p1Claimed = board.claimed.flat().filter((c) => c === 'P1').length
+  const p2Claimed = board.claimed.flat().filter((c) => c === 'P2').length
+  const p1Trapped = board.trappedOrder.includes('P1')
+  const p2Trapped = board.trappedOrder.includes('P2')
+
+  const fullMs = clockSeconds * 1000
+  const activeTurnMs = Math.max(0, fullMs - (Date.now() - turnStartedAt))
+  const liveP1 = activePlayer === 'P1' ? activeTurnMs : fullMs
+  const liveP2 = activePlayer === 'P2' ? activeTurnMs : fullMs
+
+  // For AI, only show valid moves when it's P1's turn
+  const myValidMoves = activePlayer === 'P1' && !gameOver ? validMoves : []
+
+  return (
+    <GameLayout
+      board={board}
+      validMoves={myValidMoves}
+      cellSize={cellSize}
+      onMove={(sq) => {
+        posthog?.capture('move_made', { mode, move_count: board.moveCount + 1, game_type: 'ai' })
+        makeMove(sq)
+      }}
+      onResign={handleResign}
+      p1={{ name: displayName ?? 'YOU', isActive: activePlayer === 'P1' && !gameOver, timeLeftMs: liveP1, clockSeconds, claimedCount: p1Claimed, isTrapped: p1Trapped, isYou: true }}
+      p2={{ name: isAIThinking ? 'THINKING...' : 'AI', isActive: activePlayer === 'P2' && !gameOver, timeLeftMs: liveP2, clockSeconds, claimedCount: p2Claimed, isTrapped: p2Trapped }}
+      gameOver={gameOver}
+      onRematch={() => { useGameStore.getState().reset(); router.replace('/') }}
+      onMainMenu={() => { useGameStore.getState().reset(); router.replace('/') }}
+    />
+  )
+}
+
 // ─── Shared layout ────────────────────────────────────────────────────────────
 
 interface PanelInfo {
@@ -357,13 +462,28 @@ function GameLayout({
 // ─── Route entry ─────────────────────────────────────────────────────────────
 
 export default function GameScreen() {
-  const { gameId, mode, clock } = useLocalSearchParams<{ gameId: string; mode: string; clock: string }>()
+  const { gameId, mode, clock, difficulty } = useLocalSearchParams<{
+    gameId: string
+    mode: string
+    clock: string
+    difficulty: string
+  }>()
 
   if (gameId === 'local') {
     return (
       <LocalGameScreen
         mode={(mode as GameMode) ?? 'SUDDEN_DEATH'}
         clock={Number(clock ?? 30)}
+      />
+    )
+  }
+
+  if (gameId === 'ai') {
+    return (
+      <AIGameScreen
+        mode={(mode as GameMode) ?? 'SUDDEN_DEATH'}
+        clock={Number(clock ?? 30)}
+        difficulty={(difficulty as AIDifficulty) ?? 'MEDIUM'}
       />
     )
   }
