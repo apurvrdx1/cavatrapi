@@ -33,10 +33,9 @@ const POSTHOG_HOST = process.env['EXPO_PUBLIC_POSTHOG_HOST'] ?? 'https://us.i.po
 const postHogOptions = {
   host: POSTHOG_HOST,
   ...(Platform.OS === 'web' && {
-    storage: {
+    customStorage: {
       getItem: (key: string) => localStorage.getItem(key),
       setItem: (key: string, value: string) => localStorage.setItem(key, value),
-      removeItem: (key: string) => localStorage.removeItem(key),
     },
   }),
 }
