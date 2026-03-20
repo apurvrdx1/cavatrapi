@@ -5,6 +5,7 @@ import { AI_DEPTH, AI_BUDGET_MS } from './types.js'
 import type { AIDifficulty, AIResult } from './types.js'
 
 export type { AIDifficulty, AIResult } from './types.js'
+export { AI_DISPLAY_DELAY_MS } from './types.js'
 
 /**
  * Chooses the best move for `player` using minimax with alpha-beta pruning.
