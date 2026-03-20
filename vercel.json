@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @cavatrapi/app build:web",
+  "buildCommand": "pnpm --filter @cavatrapi/shared build && pnpm --filter @cavatrapi/engine build && pnpm --filter @cavatrapi/ai build && pnpm --filter @cavatrapi/app build:web",
   "outputDirectory": "apps/app/dist",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": null,
