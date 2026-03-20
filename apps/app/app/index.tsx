@@ -43,6 +43,10 @@ export default function WelcomeScreen() {
       const username = await getOrCreateGuestUsername()
       setGuest(username)
       router.replace('/mode')
+    } catch {
+      // Storage unavailable — still allow guest play with a fallback name
+      setGuest('Guest')
+      router.replace('/mode')
     } finally {
       setGuestLoading(false)
     }

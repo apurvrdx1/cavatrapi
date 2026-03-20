@@ -89,7 +89,7 @@ function LocalGameScreen({ mode, clock }: { mode: GameMode; clock: number }) {
       p1={{ name: 'Player 1', isActive: activePlayer === 'P1' && !gameOver, timeLeftMs: liveP1, clockSeconds, claimedCount: p1Claimed, isTrapped: p1Trapped }}
       p2={{ name: 'Player 2', isActive: activePlayer === 'P2' && !gameOver, timeLeftMs: liveP2, clockSeconds, claimedCount: p2Claimed, isTrapped: p2Trapped }}
       gameOver={gameOver}
-      onRematch={() => { useGameStore.getState().reset(); router.replace('/lobby') }}
+      onRematch={() => { useGameStore.getState().reset(); router.replace('/mode') }}
       onMainMenu={() => { useGameStore.getState().reset(); router.replace('/') }}
     />
   )
@@ -145,15 +145,18 @@ function NetworkGameScreen({ gameId }: { gameId: string }) {
       })
     }
 
+    function onOpponentDisconnected() {
+      // GAME_OVER follows immediately from server — no extra handling needed
+    }
+
     socket.on(SERVER_EVENTS.GAME_STATE, onGameState)
     socket.on(SERVER_EVENTS.GAME_OVER, onGameOver)
-    socket.on(SERVER_EVENTS.OPPONENT_DISCONNECTED, () => {
-      // Game over event follows immediately from server; just surface a brief note
-    })
+    socket.on(SERVER_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected)
 
     return () => {
       socket.off(SERVER_EVENTS.GAME_STATE, onGameState)
       socket.off(SERVER_EVENTS.GAME_OVER, onGameOver)
+      socket.off(SERVER_EVENTS.OPPONENT_DISCONNECTED, onOpponentDisconnected)
     }
   }, [gameId])
 
@@ -223,7 +226,7 @@ const p1Claimed = board.claimed.flat().filter((c) => c === 'P1').length
         isYou: !youAreP1,
       }}
       gameOver={gameOver}
-      onRematch={() => { reset(); router.replace('/lobby') }}
+      onRematch={() => { reset(); router.replace('/mode') }}
       onMainMenu={() => { reset(); router.replace('/') }}
       yourRole={yourRole}
     />
@@ -277,7 +280,10 @@ function AIGameScreen({ mode, clock, difficulty }: { mode: GameMode; clock: numb
       setIsAIThinking(false)
     }, AI_DISPLAY_DELAY_MS)
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      setIsAIThinking(false)
+    }
   }, [board?.currentTurn, board?.moveCount])
 
   const cellSize = Math.floor((Math.min(width, 420) - 60) / 8)

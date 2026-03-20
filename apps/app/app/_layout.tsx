@@ -30,6 +30,10 @@ const CLERK_PUBLISHABLE_KEY =
   process.env['EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY'] ??
   ''
 
+if (!CLERK_PUBLISHABLE_KEY) {
+  throw new Error('EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set — auth will not work')
+}
+
 const POSTHOG_API_KEY = process.env['EXPO_PUBLIC_POSTHOG_API_KEY'] ?? ''
 const POSTHOG_HOST = process.env['EXPO_PUBLIC_POSTHOG_HOST'] ?? 'https://us.i.posthog.com'
 
@@ -78,7 +82,7 @@ function ScreenTracker() {
 
   useEffect(() => {
     posthog?.screen(pathname)
-  }, [pathname])
+  }, [pathname, posthog])
 
   return null
 }

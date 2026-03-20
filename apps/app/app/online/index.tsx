@@ -19,7 +19,6 @@ export default function OnlineScreen() {
   const displayName = useAuthStore((s) => s.displayName)
   const settingsStore = useSettingsStore()
 
-  const [searching] = useState(!isInviteMode)
   const [cancelled, setCancelled] = useState(false)
   const [code, setCode] = useState<string | null>(null)
 
@@ -31,10 +30,7 @@ export default function OnlineScreen() {
     if (isInviteMode) return
 
     reset()
-    socket.emit(SOCKET_EVENTS.JOIN_GAME, {
-      mode: gameMode,
-      clockSeconds,
-    })
+    socket.emit(SOCKET_EVENTS.JOIN_GAME, { mode: gameMode, clockSeconds })
 
     function onGameCreated(payload: { gameId: string; yourRole: string; clockSeconds?: number }) {
       setMatched(payload.gameId, payload.yourRole as 'P1' | 'P2', clockSeconds)
@@ -45,17 +41,14 @@ export default function OnlineScreen() {
     return () => {
       socket.off(SERVER_EVENTS.GAME_CREATED, onGameCreated)
     }
-  }, [isInviteMode])
+  }, [isInviteMode, gameMode, clockSeconds])
 
   // ── Invite flow ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isInviteMode) return
 
     reset()
-    socket.emit(SOCKET_EVENTS.CREATE_PRIVATE_GAME, {
-      mode: gameMode,
-      clockSeconds,
-    })
+    socket.emit(SOCKET_EVENTS.CREATE_PRIVATE_GAME, { mode: gameMode, clockSeconds })
 
     function onPrivateGameCreated(payload: { code: string }) {
       setCode(payload.code)
@@ -72,7 +65,7 @@ export default function OnlineScreen() {
       socket.off(SERVER_EVENTS.PRIVATE_GAME_CREATED, onPrivateGameCreated)
       socket.off(SERVER_EVENTS.GAME_CREATED, onGameCreated)
     }
-  }, [isInviteMode])
+  }, [isInviteMode, gameMode, clockSeconds])
 
   const handleCancel = useCallback(() => {
     socket.emit(SOCKET_EVENTS.LEAVE_QUEUE)
@@ -82,7 +75,9 @@ export default function OnlineScreen() {
 
   const handleCopyLink = useCallback(async () => {
     if (!code) return
-    const link = 'https://cavatrapi-server.vercel.app/join/' + code
+    // Use the same base URL the socket connects to in production
+    const baseUrl = __DEV__ ? 'http://localhost:8081' : 'https://cavatrapi-server.vercel.app'
+    const link = baseUrl + '/join/' + code
     await Clipboard.setStringAsync(link)
   }, [code])
 
@@ -145,8 +140,7 @@ export default function OnlineScreen() {
           {!cancelled ? (
             <Pressable
               style={[styles.searchingBtn]}
-              onPress={() => setCancelled(true)}
-              disabled={!searching}
+              onPress={() => { setCancelled(true); handleCancel() }}
             >
               <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
               <Text style={styles.searchingBtnText}>SEARCHING...</Text>
