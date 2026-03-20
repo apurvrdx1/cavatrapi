@@ -87,9 +87,12 @@ export default function RootLayout() {
         <ScreenTracker />
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="lobby/index" options={{ headerShown: false }} />
+          <Stack.Screen name="mode/index" options={{ headerShown: false }} />
+          <Stack.Screen name="online/index" options={{ headerShown: false }} />
+          <Stack.Screen name="settings/index" options={{ headerShown: false }} />
+          <Stack.Screen name="how-to-play/index" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen name="join/[code]" options={{ headerShown: false }} />
           <Stack.Screen name="game/[gameId]" options={{ headerShown: false }} />
-          <Stack.Screen name="assets/index" options={{ title: 'Asset Pack' }} />
           <Stack.Screen name="profile/index" options={{ headerShown: false }} />
         </Stack>
       </ClerkProvider>

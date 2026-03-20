@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, Platform, ScrollView } from 'react-n
 import { useRouter } from 'expo-router'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { KnightPiece } from '../../components/KnightPiece'
+import { useAuthStore } from '../../stores/authStore'
 
 // Placeholder stats — will be replaced with Clerk + Supabase data
 const PLACEHOLDER_STATS = {
@@ -40,7 +41,9 @@ function ModeRow({ mode, wins, losses, draws }: { mode: string; wins: number; lo
 
 export default function ProfileScreen() {
   const router = useRouter()
+  const { displayName, username: authUsername } = useAuthStore()
   const { username, gamesPlayed, wins, losses, draws, modes } = PLACEHOLDER_STATS
+  const resolvedName = displayName ?? authUsername ?? username ?? 'Player'
   const winRate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0
 
   return (
@@ -69,7 +72,7 @@ export default function ProfileScreen() {
             <View style={styles.avatarRing}>
               <KnightPiece color="#8b5cf6" size={80} />
             </View>
-            <Text style={styles.username}>{username.toUpperCase()}</Text>
+            <Text style={styles.username}>{resolvedName.toUpperCase()}</Text>
             <View style={styles.guestBadge}>
               <MaterialCommunityIcons name="account-outline" size={12} color="#64748b" />
               <Text style={styles.guestBadgeText}>GUEST</Text>

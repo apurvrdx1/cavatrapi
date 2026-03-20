@@ -1,20 +1,56 @@
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, Pressable, Platform, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
+import { useAuth, useUser, useOAuth } from '@clerk/clerk-expo'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { KnightPiece } from '../components/KnightPiece'
+import { useAuthStore } from '../stores/authStore'
+import { getOrCreateGuestUsername } from '../utils/guestUsername'
 
-export default function HomeScreen() {
+export default function WelcomeScreen() {
   const router = useRouter()
+  const { isSignedIn } = useAuth()
+  const { user } = useUser()
+  const { setUser, setGuest } = useAuthStore()
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
+
+  const [guestLoading, setGuestLoading] = useState(false)
+  const [signInLoading, setSignInLoading] = useState(false)
+
+  // Auto-redirect if already signed in
+  useEffect(() => {
+    if (isSignedIn && user) {
+      setUser(user.id ?? null, user.firstName ?? user.username ?? 'Player')
+      router.replace('/mode')
+    }
+  }, [isSignedIn, user?.id])
+
+  async function handleSignIn() {
+    try {
+      setSignInLoading(true)
+      await startOAuthFlow()
+      // AuthSync in _layout.tsx handles setUser + redirect after OAuth completes
+    } catch {
+      // User cancelled or OAuth failed — silently reset
+    } finally {
+      setSignInLoading(false)
+    }
+  }
+
+  async function handleGuest() {
+    try {
+      setGuestLoading(true)
+      const username = await getOrCreateGuestUsername()
+      setGuest(username)
+      router.replace('/mode')
+    } finally {
+      setGuestLoading(false)
+    }
+  }
 
   return (
     <View style={styles.bg}>
       <View style={styles.card}>
-        {/* Title */}
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>CAVA</Text>
-          <Text style={styles.title}>TRAPI</Text>
-        </View>
-
         {/* Hero pieces */}
         <View style={styles.heroRow}>
           <View style={styles.piece1}>
@@ -25,35 +61,44 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>Knight Territory · 2 Players</Text>
+        {/* Title */}
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>CAVATRAPI</Text>
+        </View>
 
-        {/* Primary CTA */}
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>KNIGHT TERRITORY · 2 PLAYERS</Text>
+
+        {/* Sign In button */}
         <Pressable
           style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPressed]}
-          onPress={() => router.push('/lobby')}
-        >
-          <MaterialCommunityIcons name="sword-cross" size={24} color="#1e293b" />
-          <Text style={styles.btnPrimaryText}>PLAY NOW</Text>
-        </Pressable>
-
-        {/* Secondary CTA */}
-        <Pressable
-          style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnSecondaryPressed]}
-          onPress={() => router.push('/assets')}
-        >
-          <Text style={styles.btnSecondaryText}>Asset Pack</Text>
-        </Pressable>
-
-        {/* Profile link */}
-        <Pressable
-          style={styles.profileLink}
-          onPress={() => router.push('/profile')}
-          accessibilityLabel="View profile"
+          onPress={handleSignIn}
+          disabled={signInLoading || guestLoading}
+          accessibilityLabel="Sign in"
           accessibilityRole="button"
         >
-          <MaterialCommunityIcons name="account-circle-outline" size={18} color="#64748b" />
-          <Text style={styles.profileLinkText}>My Profile</Text>
+          {signInLoading ? (
+            <ActivityIndicator size="small" color="#1e293b" />
+          ) : (
+            <MaterialCommunityIcons name="account" size={24} color="#1e293b" />
+          )}
+          <Text style={styles.btnPrimaryText}>SIGN IN</Text>
+        </Pressable>
+
+        {/* Play as Guest button */}
+        <Pressable
+          style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnSecondaryPressed]}
+          onPress={handleGuest}
+          disabled={guestLoading || signInLoading}
+          accessibilityLabel="Play as guest"
+          accessibilityRole="button"
+        >
+          {guestLoading ? (
+            <ActivityIndicator size="small" color="#475569" />
+          ) : (
+            <MaterialCommunityIcons name="incognito" size={22} color="#475569" />
+          )}
+          <Text style={styles.btnSecondaryText}>PLAY AS GUEST</Text>
         </Pressable>
       </View>
     </View>
@@ -76,7 +121,7 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: 'center',
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 400,
     ...Platform.select({
       web: { boxShadow: '12px 12px 0px #1e293b' },
       default: {
@@ -88,26 +133,11 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  titleBlock: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  title: {
-    fontWeight: '900',
-    fontSize: 56,
-    color: '#facc15',
-    letterSpacing: 4,
-    lineHeight: 60,
-    ...Platform.select({
-      web: { textShadow: '4px 4px 0 #1e293b', WebkitTextStroke: '2px #1e293b' },
-      default: {},
-    }),
-  },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    marginVertical: 24,
+    marginBottom: 20,
     gap: 8,
   },
   piece1: {
@@ -117,11 +147,25 @@ const styles = StyleSheet.create({
   piece2: {
     transform: [{ rotate: '6deg' }],
   },
+  titleBlock: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  title: {
+    fontWeight: '900',
+    fontSize: 48,
+    color: '#facc15',
+    letterSpacing: 4,
+    ...Platform.select({
+      web: { textShadow: '4px 4px 0 #1e293b', WebkitTextStroke: '2px #1e293b' },
+      default: {},
+    }),
+  },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
-    letterSpacing: 1,
+    color: '#475569',
+    letterSpacing: 2,
     marginBottom: 32,
     textAlign: 'center',
   },
@@ -136,6 +180,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 32,
     width: '100%',
+    minHeight: 56,
     gap: 10,
     marginBottom: 16,
     ...Platform.select({
@@ -169,14 +214,17 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   btnSecondary: {
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: '#1e293b',
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 28,
+    borderWidth: 4,
+    borderColor: '#1e293b',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    width: '100%',
+    minHeight: 52,
+    gap: 10,
     backgroundColor: '#f1f5f9',
     ...Platform.select({
       web: { boxShadow: '4px 4px 0px #1e293b', cursor: 'pointer' },
@@ -198,20 +246,8 @@ const styles = StyleSheet.create({
   },
   btnSecondaryText: {
     fontWeight: '800',
-    fontSize: 16,
+    fontSize: 18,
     color: '#475569',
     letterSpacing: 1,
-  },
-  profileLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-  },
-  profileLinkText: {
-    fontWeight: '600',
-    fontSize: 14,
-    color: '#64748b',
   },
 })
