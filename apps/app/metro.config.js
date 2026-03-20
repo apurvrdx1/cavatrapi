@@ -9,6 +9,11 @@ const config = getDefaultConfig(projectRoot)
 // Watch all workspace packages
 config.watchFolders = [workspaceRoot]
 
+// Force Metro to resolve "require" (CJS) over "import" (ESM) for package exports.
+// Without this, Metro picks the ESM build of packages like @sentry/browser which
+// contain import.meta — crashing the web bundle.
+config.resolver.unstable_conditionNames = ['browser', 'require', 'react-native']
+
 // Map @cavatrapi/* packages directly to their TypeScript source entry points.
 // This bypasses the compiled dist/ ESM output, which Metro mis-handles as an
 // ES module and injects import.meta — causing runtime crashes on web.
