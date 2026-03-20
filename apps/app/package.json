@@ -19,6 +19,7 @@
     "@clerk/clerk-expo": "^2.19.31",
     "@expo/metro-runtime": "~55.0.6",
     "@expo/vector-icons": "^14.0.0",
+    "@sentry/react": "^10.45.0",
     "@sentry/react-native": "^8.4.0",
     "expo": "~55.0.7",
     "expo-constants": "~55.0.8",

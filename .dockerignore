@@ -1,0 +1,69 @@
+# flyctl launch added from .gitignore
+**/node_modules
+**/dist
+**/.expo
+**/coverage
+**/*.local
+**/.env
+**/.env.*
+!**/.env.example
+**/.DS_Store
+**/.turbo/cache
+**/.dev
+**/.claude
+**/documentation_notes/records/*/artifacts
+**/*.m4qcUTYc1X46F354I0xQepYy_2GWh6jgm7Vxzi8dHLQ
+
+# flyctl launch added from apps/app/.gitignore
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+apps/app/**/node_modules
+
+# Expo
+apps/app/**/.expo
+apps/app/**/dist
+apps/app/**/web-build
+apps/app/**/expo-env.d.ts
+
+# Native
+apps/app/**/.kotlin
+apps/app/**/*.orig.*
+apps/app/**/*.jks
+apps/app/**/*.p8
+apps/app/**/*.p12
+apps/app/**/*.key
+apps/app/**/*.mobileprovision
+
+# Metro
+apps/app/**/.metro-health-check*
+
+# debug
+apps/app/**/npm-debug.*
+apps/app/**/yarn-debug.*
+apps/app/**/yarn-error.*
+
+# macOS
+apps/app/**/.DS_Store
+apps/app/**/*.pem
+
+# local env files
+apps/app/**/.env*.local
+
+# typescript
+apps/app/**/*.tsbuildinfo
+
+# generated native folders
+apps/app/ios
+apps/app/android
+
+# flyctl launch added from node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/.gitignore
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/node_modules
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/**/.*
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/**/.gitignore
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/**/.travis.yml
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/**/.jshintrc
+!node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/**/.npmignore
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/coverage
+node_modules/.pnpm/jayson@4.3.0_bufferutil@4.1.0_utf-8-validate@6.0.6/node_modules/jayson/yarn-error.log
+fly.toml

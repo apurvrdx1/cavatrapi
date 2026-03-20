@@ -1,4 +1,5 @@
-import * as Sentry from '@sentry/react-native'
+import * as SentryNative from '@sentry/react-native'
+import * as SentryReact from '@sentry/react'
 import { Stack, usePathname } from 'expo-router'
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
@@ -8,12 +9,19 @@ import { Platform } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
 import Constants from 'expo-constants'
 
-// ─── Sentry — native only (@sentry/react-native doesn't support web) ─────────
-if (Platform.OS !== 'web') {
-  Sentry.init({
-    dsn: process.env['EXPO_PUBLIC_SENTRY_DSN'],
+// ─── Sentry — @sentry/react on web, @sentry/react-native on iOS/Android ──────
+const SENTRY_DSN = process.env['EXPO_PUBLIC_SENTRY_DSN']
+if (Platform.OS === 'web') {
+  SentryReact.init({
+    dsn: SENTRY_DSN,
     tracesSampleRate: 0,
-    enabled: !!process.env['EXPO_PUBLIC_SENTRY_DSN'],
+    enabled: !!SENTRY_DSN,
+  })
+} else {
+  SentryNative.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0,
+    enabled: !!SENTRY_DSN,
   })
 }
 
