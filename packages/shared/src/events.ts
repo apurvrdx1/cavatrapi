@@ -7,6 +7,9 @@ export const SOCKET_EVENTS = {
   SUBMIT_MOVE: 'submit_move',
   REQUEST_AI_MOVE: 'request_ai_move',
   RESIGN: 'resign',
+  CREATE_PRIVATE_GAME: 'create_private_game',
+  JOIN_PRIVATE_GAME: 'join_private_game',
+  LEAVE_QUEUE: 'leave_queue',
 } as const
 
 // Server → Client
@@ -19,4 +22,6 @@ export const SERVER_EVENTS = {
   GAME_CREATED: 'game_created',
   OPPONENT_DISCONNECTED: 'opponent_disconnected',
   OPPONENT_RECONNECTED: 'opponent_reconnected',
+  PRIVATE_GAME_CREATED: 'private_game_created',
+  PRIVATE_GAME_ERROR: 'private_game_error',
 } as const
