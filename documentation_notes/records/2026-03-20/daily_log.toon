@@ -1,0 +1,130 @@
+# ─── session_open ─────────────────────────────────────────────────────────
+event: session_open
+timestamp: "2026-03-20T10:00:00.000Z"
+session_id: sess-20260320-B3M8
+project_name: cavatrapi
+opened_at: "2026-03-20T10:00:00.000Z"
+
+# ─── day_plan ─────────────────────────────────────────────────────────────
+event: day_plan
+timestamp: "2026-03-20T10:00:00.000Z"
+carry_over_from: 2026-03-19
+status_at_start:
+  fly_server: live — https://cavatrapi-server.fly.dev
+  vercel_web: live — https://cavatrapi-server.vercel.app
+  supabase: configured, migration applied, Clerk JWT bridge active
+  clerk: configured, JWT verification in socket handshake
+  posthog: PostHogProvider wired, awaiting real API key
+  sentry: scaffold wired, awaiting real DSNs
+  uptimerobot: not set up
+
+planned_work:
+  - id: P1
+    title: Sentry setup (2 projects — React Native + Node.js)
+    priority: high
+    effort: small
+    steps:
+      - Create account at sentry.io
+      - Create "cavatrapi-app" project (React Native)
+      - Create "cavatrapi-server" project (Node.js)
+      - Replace EXPO_PUBLIC_SENTRY_DSN in Vercel env vars
+      - Replace SENTRY_DSN in Fly.io secrets
+  - id: P2
+    title: PostHog setup
+    priority: high
+    effort: small
+    steps:
+      - Create account at posthog.com
+      - Get project API key
+      - Replace EXPO_PUBLIC_POSTHOG_API_KEY in Vercel env vars
+  - id: P3
+    title: UptimeRobot monitor
+    priority: medium
+    effort: small
+    steps:
+      - Create account at uptimerobot.com
+      - Add HTTP monitor for https://cavatrapi-server.fly.dev/health
+      - Set interval to 5 min (keeps server warm, avoids cold wakes)
+  - id: P4
+    title: End-to-end smoke test
+    priority: high
+    effort: medium
+    steps:
+      - Open web app in browser
+      - Sign in with Clerk
+      - Start a local AI game — verify move_made events in PostHog
+      - Start a network game — verify socket connects to Fly.io server
+      - Check Sentry for any errors
+  - id: P5
+    title: Resend email (optional / if time permits)
+    priority: low
+    effort: small
+    steps:
+      - Create account at resend.com
+      - Get API key
+      - Configure sending domain or use onboarding@resend.dev for testing
+
+# ─── Entry 20260320-001 ──────────────────────────────────────────────────
+entry_id: 20260320-001
+timestamp: "2026-03-20T10:30:00.000Z"
+session_date: 2026-03-20
+interaction_type: debugging
+phase: deploy
+importance: high
+status: resolved
+objective: Fix PostHog crash + Sentry on web
+interaction:
+  user_prompt: "following errors ... app is finally rendering"
+  assistant_response_summary: |
+    PostHog crash: wrong option name. posthog-react-native v4.x uses 'customStorage' not
+    'storage' or 'storageProvider'. The SDK silently ignored the wrong field and fell through
+    to buildOptimisticAsyncStorage() which throws on web.
+    Sentry: @sentry/react-native bundles both SDKs causing malformed URLs. Fixed via
+    platform-specific module files (utils/sentry.ts + utils/sentry.web.ts) — Metro's
+    .web.ts extension resolution ensures only one SDK is bundled per platform.
+    Both fixes committed and deployed via Vercel auto-deploy.
+key_decisions:
+  - "customStorage is the correct PostHog field name (not storage, not storageProvider)"
+  - "Platform-specific modules (.web.ts) are the correct pattern for SDK isolation in Expo"
+  - "Web is a primary platform for Cavatrapi — iOS/Android come later"
+files_modified:
+  - apps/app/app/_layout.tsx
+  - apps/app/utils/sentry.ts (new)
+  - apps/app/utils/sentry.web.ts (new)
+commits:
+  - "fix: platform-specific Sentry modules, PostHog localStorage storage on web"
+  - "fix: PostHog customStorage (not storage) for web localStorage"
+
+# ─── Entry 20260320-002 ──────────────────────────────────────────────────
+entry_id: 20260320-002
+timestamp: "2026-03-20T11:00:00.000Z"
+session_date: 2026-03-20
+interaction_type: planning
+phase: feature
+importance: high
+status: planned
+objective: VS AI game mode + How to Play screen
+interaction:
+  user_prompt: "only showing find match no option to play against AI ... we need a how to play section"
+  assistant_response_summary: |
+    Scanned full app flow. Found: lobby has Find Match (socket) + Local Play (2 humans same
+    device) but NO AI opponent mode. @cavatrapi/ai exports chooseBestMove — a pure sync
+    function that runs client-side with 500ms budget.
+    Planned 5-phase implementation:
+    P1: Add @cavatrapi/ai dep + register how-to-play route (modal)
+    P2: How to Play screen (6 sections, accessible from home + lobby)
+    P3: Lobby VS AI — difficulty pill-row (Easy/Med/Hard) + VS AI button
+    P4: AIGameScreen in [gameId].tsx — AI turn via setTimeout(500ms), isThinking badge
+    P5: Polish — PostHog events, rematch flow, smoke test
+    Key decisions:
+    - AI runs client-side (pure function, no socket needed)
+    - difficulty pill uses orange accent to distinguish from mode (green) + clock (blue)
+    - How to Play as modal-presented screen (router.push + presentation:modal)
+    - AI always plays P2, player always P1
+    - resign always calls resign('P1') in AI game — player can never resign for AI
+key_decisions:
+  - "AI runs client-side via @cavatrapi/ai package — no socket needed for AI games"
+  - "How to Play is a modal-presented screen, not inline component"
+  - "AI difficulty uses orange accent (#fb923c) to distinguish from other pill rows"
+  - "chooseBestMove is synchronous — fires in setTimeout(500ms) to keep UI responsive"
+pending_implementation: true
