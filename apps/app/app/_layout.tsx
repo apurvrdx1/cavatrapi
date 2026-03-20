@@ -106,6 +106,7 @@ export default function RootLayout() {
           <Stack.Screen name="join/[code]" options={{ headerShown: false }} />
           <Stack.Screen name="game/[gameId]" options={{ headerShown: false }} />
           <Stack.Screen name="profile/index" options={{ headerShown: false }} />
+          <Stack.Screen name="oauth-native-callback" options={{ headerShown: false }} />
         </Stack>
       </ClerkProvider>
     </PostHogProvider>
