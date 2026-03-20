@@ -338,6 +338,82 @@ function AIGameScreen({ mode, clock, difficulty }: { mode: GameMode; clock: numb
   )
 }
 
+// ─── Mini board (victory screen) ─────────────────────────────────────────────
+
+const MINI_CELL = 17
+const MINI_BOARD_SIZE = MINI_CELL * 8
+
+function MiniBoard({ board, winner }: { board: BoardState; winner: Player }) {
+  const isAreaControl = board.mode === 'AREA_CONTROL'
+
+  function cellColor(owner: 'P1' | 'P2' | null, row: number, col: number): string {
+    const isP1Pos = board.positions.P1.row === row && board.positions.P1.col === col
+    const isP2Pos = board.positions.P2.row === row && board.positions.P2.col === col
+    if (isP1Pos || isP2Pos) return '#1e293b' // knight position shown as dark dot
+
+    if (owner === null) return '#e2e8f0'
+
+    if (isAreaControl) {
+      // winner = bright, loser = muted/desaturated
+      const isWinnerCell = owner === winner
+      if (owner === 'P1') return isWinnerCell ? '#8b5cf6' : '#ddd6fe'
+      return isWinnerCell ? '#facc15' : '#fef9c3'
+    }
+
+    // Sudden death: always show true colors
+    return owner === 'P1' ? '#8b5cf6' : '#facc15'
+  }
+
+  return (
+    <View style={miniStyles.board}>
+      {board.claimed.map((row, r) => (
+        <View key={r} style={miniStyles.row}>
+          {row.map((cell, c) => {
+            const isP1Pos = board.positions.P1.row === r && board.positions.P1.col === c
+            const isP2Pos = board.positions.P2.row === r && board.positions.P2.col === c
+            const isKnight = isP1Pos || isP2Pos
+            return (
+              <View
+                key={c}
+                style={[
+                  miniStyles.cell,
+                  { backgroundColor: cellColor(cell, r, c) },
+                  isKnight && miniStyles.knightCell,
+                ]}
+              />
+            )
+          })}
+        </View>
+      ))}
+    </View>
+  )
+}
+
+const miniStyles = StyleSheet.create({
+  board: {
+    width: MINI_BOARD_SIZE,
+    height: MINI_BOARD_SIZE,
+    borderWidth: 2,
+    borderColor: '#1e293b',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+  },
+  cell: {
+    width: MINI_CELL,
+    height: MINI_CELL,
+  },
+  knightCell: {
+    borderRadius: MINI_CELL / 2,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    width: MINI_CELL,
+    height: MINI_CELL,
+  },
+})
+
 // ─── Shared layout ────────────────────────────────────────────────────────────
 
 interface PanelInfo {
@@ -434,19 +510,62 @@ function GameLayout({
       {gameOver && (
         <View style={styles.overlay}>
           <View style={styles.overlayCard}>
-            <Text style={styles.overlayTitle}>
+            {/* Title */}
+            <Text style={[
+              styles.overlayTitle,
+              gameOver.winner === 'draw' && { color: '#64748b' },
+              gameOver.winner !== 'draw' && gameOver.winner === 'P2' && { color: '#facc15' },
+            ]}>
               {gameOver.winner === 'draw'
                 ? 'DRAW!'
-                : yourRole
-                  ? gameOver.winner === yourRole ? 'YOU WIN!' : 'YOU LOSE'
-                  : `${gameOver.winner} WINS!`}
+                : `${gameOver.winner === 'P1' ? p1.name : p2.name} WINS!`.toUpperCase()}
             </Text>
+
+            {/* Reason */}
             <Text style={styles.overlayReason}>
               {gameOver.reason === 'timeout' ? 'Time expired'
-                : gameOver.reason === 'resign' ? 'Player resigned'
-                : gameOver.reason === 'opponent_disconnected' ? 'Opponent disconnected'
+                : gameOver.reason === 'resign' ? 'Resigned'
+                : gameOver.reason === 'opponent_disconnected' ? 'Opponent left'
+                : board.mode === 'AREA_CONTROL' ? 'Most territory claimed'
                 : 'No moves left'}
             </Text>
+
+            {/* Mini board */}
+            {gameOver.winner !== 'draw' && (
+              <MiniBoard board={board} winner={gameOver.winner as Player} />
+            )}
+
+            {/* Mode-specific context */}
+            {gameOver.winner !== 'draw' && board.mode === 'AREA_CONTROL' && (
+              <View style={styles.scoreRow}>
+                <View style={styles.scoreBlock}>
+                  <Text style={[styles.scoreName, { color: '#8b5cf6' }]} numberOfLines={1}>{p1.name}</Text>
+                  <Text style={[
+                    styles.scoreNum,
+                    gameOver.winner === 'P1' ? styles.scoreNumWinner : styles.scoreNumLoser,
+                  ]}>{p1.claimedCount}</Text>
+                </View>
+                <Text style={styles.scoreVs}>VS</Text>
+                <View style={styles.scoreBlock}>
+                  <Text style={[styles.scoreName, { color: '#ca8a04' }]} numberOfLines={1}>{p2.name}</Text>
+                  <Text style={[
+                    styles.scoreNum,
+                    gameOver.winner === 'P2' ? styles.scoreNumWinner : styles.scoreNumLoser,
+                  ]}>{p2.claimedCount}</Text>
+                </View>
+              </View>
+            )}
+
+            {gameOver.winner !== 'draw' && board.mode === 'SUDDEN_DEATH' && (
+              <View style={styles.trapRow}>
+                <MaterialCommunityIcons name="chess-knight" size={14} color="#ef4444" />
+                <Text style={styles.trapText}>
+                  {`${gameOver.winner === 'P1' ? p2.name : p1.name} TRAPPED · MOVE ${board.moveCount}`}
+                </Text>
+              </View>
+            )}
+
+            {/* Actions */}
             <Pressable
               style={({ pressed }) => [styles.overlayBtn, pressed && styles.overlayBtnPressed]}
               onPress={onRematch}
@@ -580,10 +699,10 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     borderWidth: 5,
     borderColor: '#1e293b',
-    padding: 32,
+    padding: 28,
     alignItems: 'center',
-    gap: 12,
-    width: 280,
+    gap: 16,
+    width: 340,
     ...Platform.select({
       web: { boxShadow: '8px 8px 0px #1e293b' },
       default: {
@@ -596,19 +715,75 @@ const styles = StyleSheet.create({
   },
   overlayTitle: {
     fontWeight: '900',
-    fontSize: 36,
+    fontSize: 30,
     color: '#4ade80',
     letterSpacing: 2,
+    textAlign: 'center',
     ...Platform.select({
-      web: { textShadow: '4px 4px 0 #1e293b' },
+      web: { textShadow: '3px 3px 0 #1e293b' },
       default: {},
     }),
   },
   overlayReason: {
     fontWeight: '600',
+    fontSize: 12,
+    color: '#94a3b8',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginTop: -8,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    width: '100%',
+  },
+  scoreBlock: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  scoreName: {
+    fontWeight: '800',
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  scoreNum: {
+    fontWeight: '900',
+    fontSize: 36,
+    letterSpacing: -1,
+  },
+  scoreNumWinner: {
+    color: '#1e293b',
+  },
+  scoreNumLoser: {
+    color: '#cbd5e1',
+  },
+  scoreVs: {
+    fontWeight: '900',
     fontSize: 14,
-    color: '#64748b',
-    marginBottom: 8,
+    color: '#94a3b8',
+    letterSpacing: 2,
+  },
+  trapRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fff1f2',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#fecaca',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  trapText: {
+    fontWeight: '800',
+    fontSize: 11,
+    color: '#ef4444',
+    letterSpacing: 1,
   },
   overlayBtn: {
     flexDirection: 'row',
