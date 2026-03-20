@@ -168,3 +168,56 @@ agent_execution_plan:
   phase_3_merge: "Merge all -> typecheck -> commit -> archive"
 design_system: "Cartoon/Neo-brutalism — sky blue, white cards, Nunito 900, exact color tokens"
 ui_ux_compliance: "ui-ux-pro-max audited — 44pt touch targets, LayoutAnimation, single CTA, X close"
+
+# ─── Entry 20260320-004 ──────────────────────────────────────────────────
+entry_id: 20260320-004
+timestamp: "2026-03-20T18:00:00.000Z"
+session_date: 2026-03-20
+interaction_type: implementation
+phase: nav-redesign
+importance: critical
+status: complete
+objective: Execute full navigation redesign via 4-agent parallel worktree execution
+commits:
+  - "1fde0cf feat: foundation layer — authStore guest state, settingsStore, guestUsername util"
+  - "aabd824 feat(server): add CREATE_PRIVATE_GAME and JOIN_PRIVATE_GAME socket handlers"
+  - "f8a01b7 merge: feat/server-private-game into main"
+  - "a7ad8e8 fix(server): use SOCKET_EVENTS/SERVER_EVENTS constants in private game handlers"
+  - "5e0ba5f feat(app): auth/welcome, mode hub, how-to-play, settings, profile displayName"
+  - "15b70f6 feat(app): online matchmaking + invite, AI game screen, deep link join"
+  - "1f8588c fix: export AI_DISPLAY_DELAY_MS from @cavatrapi/ai package"
+files_new:
+  - apps/app/stores/settingsStore.ts
+  - apps/app/utils/guestUsername.ts
+  - apps/app/app/mode/index.tsx
+  - apps/app/app/how-to-play/index.tsx
+  - apps/app/app/settings/index.tsx
+  - apps/app/app/online/index.tsx
+  - apps/app/app/join/[code].tsx
+files_modified:
+  - apps/app/stores/authStore.ts
+  - apps/app/app/_layout.tsx
+  - apps/app/app/index.tsx
+  - apps/app/app/game/[gameId].tsx
+  - apps/app/app/profile/index.tsx
+  - packages/shared/src/events.ts
+  - packages/ai/src/index.ts
+  - apps/app/package.json
+  - apps/server/src/socket.ts
+files_deleted:
+  - apps/app/app/assets/index.tsx
+  - apps/app/app/lobby/index.tsx
+execution_notes: |
+  Agent team execution:
+  - Backend agent: wrote socket.ts handlers (raw strings, fixed to constants after merge)
+  - Screen-Auth agent: overdelivered — wrote auth screens AND content screens
+  - Screen-Content agent: files already committed by Screen-Auth, worktree auto-cleaned
+  - Screen-Game agent: wrote online + join + AI game screen (no Bash perms for commit)
+  All agents ran without Bash permission for git — orchestrator handled all commits.
+  Worktrees for Screen-Auth and Screen-Content ran directly in main working tree.
+key_decisions:
+  - "AI_DISPLAY_DELAY_MS not exported from @cavatrapi/ai — fixed with re-export + pnpm build"
+  - "Screen-Auth agent covered Screen-Content scope — no duplication, just committed both"
+  - "Event string constants fixed post-merge (Backend agent used raw strings)"
+typecheck: "clean — pnpm --filter @cavatrapi/app typecheck passes with 0 errors"
+pushed: true
