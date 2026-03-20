@@ -128,3 +128,43 @@ key_decisions:
   - "AI difficulty uses orange accent (#fb923c) to distinguish from other pill rows"
   - "chooseBestMove is synchronous — fires in setTimeout(500ms) to keep UI responsive"
 pending_implementation: true
+
+# ─── Entry 20260320-003 ──────────────────────────────────────────────────
+entry_id: 20260320-003
+timestamp: "2026-03-20T14:00:00.000Z"
+session_date: 2026-03-20
+interaction_type: planning
+phase: nav-redesign
+importance: critical
+status: approved
+objective: Full navigation redesign — progressive disclosure, VS AI, How To Play, Settings, Invite links
+interaction:
+  user_prompt: |
+    "we don't need asset showcase at all remove all of the things related to that.
+    I would like to use progressive disclosure and not overwhelm the user with too many
+    options upfront... auth first, then mode selection (VS AI / Local / Online inline expansion),
+    settings with gear icon, how to play accessible everywhere, invite-link multiplayer"
+  assistant_response_summary: |
+    Major redesign plan produced after full app scan + ui-ux-pro-max skill audit.
+    Plan covers 12 new/rewritten files, 4 updated, 2 deleted, 2 new server handlers.
+    Navigation: / (auth) -> /mode (hub) -> /game/[gameId] (3 branches: ai/local/UUID)
+    New: /online, /join/[code], /settings, /how-to-play (modal)
+    Deleted: /assets, /lobby
+    Execution: 1 Foundation agent (sequential) + 4 parallel worktree agents
+    (Backend, Screen-Auth, Screen-Content, Screen-Game) + merge + typecheck.
+    Plan file: /Users/apurvray/.claude/plans/luminous-snacking-metcalfe.md
+key_decisions:
+  - "Asset Pack removed entirely"
+  - "Progressive disclosure: LayoutAnimation inline expansion, one CTA per card"
+  - "Guest auth: SecureStore chess username (Knight42 etc.)"
+  - "settingsStore: Zustand persist, clockSeconds + aiDifficulty"
+  - "AIDifficulty imported from @cavatrapi/ai, not redefined"
+  - "Invite links: CREATE_PRIVATE_GAME -> 6-char code -> /join/[code]"
+  - "4-agent parallel execution in git worktrees"
+agent_execution_plan:
+  phase_0: "git push + archive (THIS ENTRY)"
+  phase_1_foundation: "stores + utils + shared events + package.json on main"
+  phase_2_parallel: "Backend + Screen-Auth + Screen-Content + Screen-Game in worktrees"
+  phase_3_merge: "Merge all -> typecheck -> commit -> archive"
+design_system: "Cartoon/Neo-brutalism — sky blue, white cards, Nunito 900, exact color tokens"
+ui_ux_compliance: "ui-ux-pro-max audited — 44pt touch targets, LayoutAnimation, single CTA, X close"
