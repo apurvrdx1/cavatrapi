@@ -11,7 +11,9 @@
     "web": "expo start --web",
     "build:web": "expo export -p web",
     "lint": "eslint app components stores hooks",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@cavatrapi/ai": "workspace:*",
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "@types/react-dom": "~19.1.11",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^2.1.0"
   }
 }

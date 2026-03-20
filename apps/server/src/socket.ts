@@ -17,6 +17,13 @@ import {
   currentPlayerTimeLeft,
   type GameSession,
 } from './session.js'
+import {
+  generateInviteCode,
+  createRoom,
+  isRoomExpired,
+  cleanupExpiredRooms,
+  type PendingRoom,
+} from './privateGame.js'
 
 // ─── Payload types ────────────────────────────────────────────────────────────
 
@@ -44,21 +51,10 @@ interface RequestAIMovePayload {
 const socketUsers = new Map<string, VerifiedUser>()
 
 // ─── Pending private rooms ────────────────────────────────────────────────────
-interface PendingRoom {
-  socketId: string
-  mode: GameMode
-  clockSeconds: number
-  expiresAt: number
-}
 const pendingRooms = new Map<string, PendingRoom>()
 
 // Expire rooms older than 10 minutes
-setInterval(() => {
-  const now = Date.now()
-  pendingRooms.forEach((room, code) => {
-    if (room.expiresAt < now) pendingRooms.delete(code)
-  })
-}, 5 * 60 * 1000)
+setInterval(() => cleanupExpiredRooms(pendingRooms), 5 * 60 * 1000)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -201,13 +197,8 @@ export function registerSocketHandlers(io: Server, socket: Socket, user: Verifie
 
   // ── CREATE_PRIVATE_GAME ────────────────────────────────────────────────────
   socket.on(SOCKET_EVENTS.CREATE_PRIVATE_GAME, (payload: { mode: GameMode; clockSeconds: number }) => {
-    const code = Math.random().toString(36).slice(2, 8).toUpperCase()
-    pendingRooms.set(code, {
-      socketId: socket.id,
-      mode: payload.mode,
-      clockSeconds: payload.clockSeconds,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-    })
+    const code = generateInviteCode()
+    pendingRooms.set(code, createRoom(socket.id, payload.mode, payload.clockSeconds))
     socket.emit(SERVER_EVENTS.PRIVATE_GAME_CREATED, { code })
   })
 
@@ -218,7 +209,7 @@ export function registerSocketHandlers(io: Server, socket: Socket, user: Verifie
       socket.emit(SERVER_EVENTS.PRIVATE_GAME_ERROR, { reason: 'not_found' })
       return
     }
-    if (room.expiresAt < Date.now()) {
+    if (isRoomExpired(room)) {
       pendingRooms.delete(payload.code)
       socket.emit(SERVER_EVENTS.PRIVATE_GAME_ERROR, { reason: 'expired' })
       return
