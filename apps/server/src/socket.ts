@@ -200,7 +200,7 @@ export function registerSocketHandlers(io: Server, socket: Socket, user: Verifie
   })
 
   // ── CREATE_PRIVATE_GAME ────────────────────────────────────────────────────
-  socket.on('create_private_game', (payload: { mode: GameMode; clockSeconds: number }) => {
+  socket.on(SOCKET_EVENTS.CREATE_PRIVATE_GAME, (payload: { mode: GameMode; clockSeconds: number }) => {
     const code = Math.random().toString(36).slice(2, 8).toUpperCase()
     pendingRooms.set(code, {
       socketId: socket.id,
@@ -208,26 +208,26 @@ export function registerSocketHandlers(io: Server, socket: Socket, user: Verifie
       clockSeconds: payload.clockSeconds,
       expiresAt: Date.now() + 10 * 60 * 1000,
     })
-    socket.emit('private_game_created', { code })
+    socket.emit(SERVER_EVENTS.PRIVATE_GAME_CREATED, { code })
   })
 
   // ── JOIN_PRIVATE_GAME ──────────────────────────────────────────────────────
-  socket.on('join_private_game', async (payload: { code: string }) => {
+  socket.on(SOCKET_EVENTS.JOIN_PRIVATE_GAME, async (payload: { code: string }) => {
     const room = pendingRooms.get(payload.code)
     if (!room) {
-      socket.emit('private_game_error', { reason: 'not_found' })
+      socket.emit(SERVER_EVENTS.PRIVATE_GAME_ERROR, { reason: 'not_found' })
       return
     }
     if (room.expiresAt < Date.now()) {
       pendingRooms.delete(payload.code)
-      socket.emit('private_game_error', { reason: 'expired' })
+      socket.emit(SERVER_EVENTS.PRIVATE_GAME_ERROR, { reason: 'expired' })
       return
     }
 
     const hostSocket = io.sockets.sockets.get(room.socketId)
     if (!hostSocket) {
       pendingRooms.delete(payload.code)
-      socket.emit('private_game_error', { reason: 'host_left' })
+      socket.emit(SERVER_EVENTS.PRIVATE_GAME_ERROR, { reason: 'host_left' })
       return
     }
 
