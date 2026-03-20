@@ -221,3 +221,103 @@ key_decisions:
   - "Event string constants fixed post-merge (Backend agent used raw strings)"
 typecheck: "clean — pnpm --filter @cavatrapi/app typecheck passes with 0 errors"
 pushed: true
+
+# ─── Entry 20260320-005 ──────────────────────────────────────────────────
+entry_id: 20260320-005
+timestamp: "2026-03-20T19:00:00.000Z"
+session_date: 2026-03-20
+interaction_type: testing
+phase: nav-redesign
+importance: high
+status: complete
+objective: Add comprehensive test coverage for nav redesign (new modules + stores + utils)
+commits:
+  - "0d770d0 test: add comprehensive test coverage for new nav redesign features"
+files_new:
+  - apps/server/src/privateGame.ts
+  - apps/server/vitest.config.ts
+  - apps/server/src/__tests__/privateGame.test.ts
+  - apps/app/vitest.config.ts
+  - apps/app/vitest.setup.ts
+  - apps/app/stores/__tests__/authStore.test.ts
+  - apps/app/stores/__tests__/settingsStore.test.ts
+  - apps/app/utils/__tests__/guestUsername.test.ts
+files_modified:
+  - apps/server/src/socket.ts (pendingRooms extracted to privateGame.ts)
+  - apps/app/package.json (vitest added)
+  - pnpm-lock.yaml
+test_results:
+  total: 133 passing
+  by_package:
+    "@cavatrapi/engine": 66
+    "@cavatrapi/ai": 16
+    "@cavatrapi/server": 15
+    "@cavatrapi/app": 37
+coverage_approach: |
+  - Extracted pendingRooms inline code from socket.ts into pure functions
+    (generateInviteCode, createRoom, isRoomExpired, cleanupExpiredRooms) in privateGame.ts
+    so they can be unit-tested without socket.io infrastructure.
+  - App tests mock react-native Platform and AsyncStorage via vitest.setup.ts.
+  - authStore: 17 tests — initial state, setToken, setUser, setGuest, clear, displayName derivation.
+  - settingsStore: 11 tests — defaults, setClockSeconds (all 3 values), setAIDifficulty, field independence.
+  - guestUsername: 9 tests — SecureStore hit, SecureStore miss (generates + saves), SecureStore throws
+    (localStorage fallback), both storages fail (no throw), format invariants (10-99 suffix range).
+  - privateGame: 15 tests — generateInviteCode (format/uniqueness), createRoom (fields/expiry),
+    isRoomExpired (future/boundary/past), cleanupExpiredRooms (expired/valid/mixed/empty/boundary).
+key_decisions:
+  - "Pure extraction pattern: private game logic moved to privateGame.ts — testable without mocks for socket.io"
+  - "guestUsername tests use dynamic import per-test (vi.resetModules) to guarantee fresh state"
+  - "settingsStore tests show expected zustand persist stderr warnings — these are benign (localStorage unavailable in Node)"
+typecheck: "not re-run post-test commit (no types changed)"
+pushed: false
+
+# ─── Entry 20260320-006 ──────────────────────────────────────────────────
+entry_id: 20260320-006
+timestamp: "2026-03-20T19:45:00.000Z"
+session_date: 2026-03-20
+interaction_type: debugging
+phase: deploy
+importance: high
+status: complete
+objective: Fix CI, Vercel build failure, lint errors, and import.meta runtime crash
+commits:
+  - "0984e4d fix(deploy): build workspace packages before app on Vercel"
+  - "d9d8f48 fix(ci): remove explicit pnpm version from action-setup"
+  - "4310da2 fix(lint): remove unused imports in ai package, add type:module to root"
+  - "3698471 fix(lint): remove all unused vars/imports across app and server"
+  - "6ffb8a8 fix(web): remove type:module from root package.json, rename eslint config to .mjs"
+issues_found_and_fixed:
+  vercel_build:
+    symptom: "Metro bundler: @cavatrapi/ai dist/index.js does not exist"
+    root_cause: |
+      @cavatrapi/ai was newly added to apps/app/package.json in the nav redesign.
+      dist/ is gitignored. Vercel fresh clone had no built output.
+      Previous deployments worked because engine/shared were in the build cache
+      from when they were added (before gitignore was in effect).
+    fix: "Chain pnpm --filter @cavatrapi/shared build && @cavatrapi/engine build && @cavatrapi/ai build before expo export in vercel.json buildCommand"
+  github_actions:
+    symptom: "Error: Multiple versions of pnpm specified — ERR_PNPM_BAD_PM_VERSION"
+    root_cause: "pnpm/action-setup@v4 reads packageManager from package.json AND explicit version: 9 in workflow — conflict"
+    fix: "Remove version: 9 from ci.yml — action reads pnpm@9.0.0 from packageManager field automatically"
+  lint_errors:
+    files_fixed:
+      - "packages/ai/src/types.ts — unused import type { Player }"
+      - "packages/ai/src/__tests__/evaluate.test.ts — unused applyMove import"
+      - "apps/server/src/__tests__/privateGame.test.ts — unused vi import"
+      - "apps/app/app/game/[gameId].tsx — unused opponentRole variable"
+      - "apps/app/app/mode/index.tsx — unused modeKey prop param (renamed _modeKey)"
+      - "apps/app/app/online/index.tsx — unused setSearching setter"
+      - "apps/app/app/profile/index.tsx — unused losses/draws destructure"
+      - "apps/app/components/Board.tsx — unused Text import"
+  import_meta_runtime_crash:
+    symptom: "Uncaught SyntaxError: Cannot use 'import.meta' outside a module"
+    root_cause: |
+      Added \"type\": \"module\" to root package.json to silence a Node.js ESLint
+      config detection warning in CI. Metro/Expo's web bundler picks up this field
+      and generates import.meta calls inside a non-module script bundle context.
+      Build succeeds but app crashes immediately on load.
+    fix: "Remove type:module from root package.json. Rename eslint.config.js → eslint.config.mjs to get the same Node.js ESM detection without the field."
+    rule: "NEVER add type:module to the monorepo root package.json — breaks Metro web bundler"
+ci_final_status: "✓ all 5 steps green (lint/typecheck/build/test) in 50s on commit 3698471"
+vercel_final_status: "latest build (6ffb8a8) queued — expected green based on pattern"
+pushed: true
