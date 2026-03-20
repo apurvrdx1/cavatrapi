@@ -2,6 +2,7 @@
   "name": "cavatrapi",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=20.0.0",

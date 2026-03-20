@@ -1,4 +1,3 @@
-import type { Player } from '@cavatrapi/shared'
 import type { Square } from '@cavatrapi/engine'
 
 export type AIDifficulty = 'EASY' | 'MEDIUM' | 'HARD'

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createInitialBoard, applyMove } from '@cavatrapi/engine'
+import { createInitialBoard } from '@cavatrapi/engine'
 import { evaluateBoard } from '../evaluate.js'
 
 describe('evaluateBoard', () => {
